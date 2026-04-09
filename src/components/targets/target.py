@@ -184,23 +184,28 @@ def target(t: Target, state: Apt):
 
         content = ft.Container(
             ft.Tabs(
-                tabs=[
-                    ft.Tab(
-                        "Overview",
-                        icon=ft.Icons.LIST_ALT_OUTLINED,
-                        content=_overview_tab(t=selected_target),
-                    ),
-                    ft.Tab(
-                        "Shell",
-                        icon=ft.Icons.TERMINAL,
-                        content=_shell_tab(t=selected_target, state=state),
-                    ),
-                    ft.Tab(
-                        "Beacon",
-                        icon=ft.Icons.WIFI_TETHERING,
-                        content=_beacon_tab(t=selected_target),
-                    ),
-                ],
+                content=ft.Column(
+                    [
+                        ft.TabBar(
+                            tabs=[
+                                ft.Tab("Overview", icon=ft.Icons.LIST_ALT_OUTLINED),
+                                ft.Tab("Shell", icon=ft.Icons.TERMINAL),
+                                ft.Tab("Beacon", icon=ft.Icons.WIFI_TETHERING),
+                            ],
+                        ),
+                        ft.TabBarView(
+                            controls=[
+                                _overview_tab(t=selected_target),
+                                _shell_tab(t=selected_target, state=state),
+                                _beacon_tab(t=selected_target),
+                            ],
+                            expand=True,
+                        ),
+                    ],
+                    expand=True,
+                    spacing=0,
+                ),
+                length=3,
                 expand=True,
             ),
             expand=True,
