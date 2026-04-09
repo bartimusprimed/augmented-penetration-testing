@@ -3,8 +3,11 @@ from views.home_view import Home
 from views.targets_view import Targets
 from views.settings_view import Settings
 from views.modules_view import Modules
+from views.chains_view import Chains
 from components.app.navbar import NavBar
 from models.apt import Apt
+
+APP_BG = "#0d1b24"
 
 
 @ft.component
@@ -23,12 +26,21 @@ def App():
         case 2:
             content = Modules(apt_state)
         case 3:
+            content = Chains(apt_state)
+        case 4:
             content = Settings(apt_state)
         case _:
             content = Home(apt_state)
 
-    return ft.Pagelet(
-        content=ft.Column([content], expand=True),
-        navigation_bar=NavBar(goto_page),
+    return ft.Container(
+        ft.Row(
+            [
+                NavBar(current_page, goto_page),
+                ft.Container(content, expand=True),
+            ],
+            spacing=0,
+            expand=True,
+        ),
+        bgcolor=APP_BG,
         expand=True,
     )
