@@ -9,7 +9,7 @@ from models.module_metadata import AttackTactic, TargetOS, TargetArch
 @ft.observable
 class APT_MODULE(ABC):
     is_running: bool = False
-    enabled: bool = False
+    enabled: bool = True
     current_status: str = "None"
     name: str = ""
     description: str = ""

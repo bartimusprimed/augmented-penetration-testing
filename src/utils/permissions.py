@@ -1,7 +1,17 @@
 import glob
+import grp
 import logging
 import os
 import sys
+
+
+def _access_bpf_group_exists() -> bool:
+    """Return True if the ``access_bpf`` group exists on the system."""
+    try:
+        grp.getgrnam("access_bpf")
+        return True
+    except KeyError:
+        return False
 
 
 def check_raw_packet_access() -> str | None:
@@ -56,6 +66,20 @@ def check_raw_packet_access() -> str | None:
         "macOS: /dev/bpf* devices are not readable – Scapy modules will fail "
         "with PermissionError when executed",
     )
+
+    if not _access_bpf_group_exists():
+        return (
+            "Raw packet modules (ARP ping, ICMP ping, TCP SYN scan, UDP scan) "
+            "need BPF device access on macOS, but the \"access_bpf\" group does "
+            "not exist on this system.\n\n"
+            "The access_bpf group is created automatically when Wireshark is "
+            "installed. Install Wireshark from https://www.wireshark.org, then "
+            "add yourself to the group:\n\n"
+            "  sudo dseditgroup -o edit -a \"$USER\" -t user access_bpf\n\n"
+            "Log out and back in, then restart APT.\n\n"
+            "Do NOT run APT with sudo – macOS blocks GUI apps running as root."
+        )
+
     return (
         "Raw packet modules (ARP ping, ICMP ping, TCP SYN scan, UDP scan) "
         "need BPF device access on macOS.\n\n"

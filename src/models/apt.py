@@ -113,6 +113,58 @@ class Apt:
             ))
             return
 
+        confirmed: list[bool] = [False]
+        confirmed_event = __import__("threading").Event()
+
+        target_labels = ft.Column(
+            [ft.Text(f"  • {t.ip_label}", size=13) for t in selected],
+            spacing=4,
+        )
+
+        def _confirm(_):
+            confirmed[0] = True
+            confirmed_event.set()
+            ft.context.page.pop_dialog()
+
+        def _cancel(_):
+            confirmed_event.set()
+            ft.context.page.pop_dialog()
+
+        ft.context.page.show_dialog(ft.AlertDialog(
+            icon=ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=ft.Colors.AMBER_400, size=36),
+            title=ft.Text("Run Chain?"),
+            content=ft.Column(
+                [
+                    ft.Text(
+                        f"You are about to run \"{chain.name}\" against {len(selected)} "
+                        f"target{'s' if len(selected) != 1 else ''}:",
+                        size=13,
+                    ),
+                    target_labels,
+                    ft.Text(
+                        "This could be destructive. Make sure you have authorisation.",
+                        size=12,
+                        color=ft.Colors.AMBER_400,
+                        italic=True,
+                    ),
+                ],
+                spacing=8,
+                tight=True,
+            ),
+            actions=[
+                ft.TextButton("Cancel", on_click=_cancel),
+                ft.TextButton(
+                    "Run Chain",
+                    on_click=_confirm,
+                    style=ft.ButtonStyle(color=ft.Colors.RED_400),
+                ),
+            ],
+        ))
+
+        confirmed_event.wait(timeout=300)
+        if not confirmed[0]:
+            return
+
         def execute_chain():
             import concurrent.futures
             chain.is_running = True
