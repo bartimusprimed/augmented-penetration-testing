@@ -1,16 +1,48 @@
 import flet as ft
 from models.chain import Chain
 from models.apt import Apt
+from models.module_metadata import AttackTactic
 
 CYAN = ft.Colors.CYAN_400
 NODE_BG = "#1a2d3d"
 DRAG_BG = "#0d3050"
 
+_TACTIC_COLORS: dict[AttackTactic, str] = {
+    AttackTactic.RECONNAISSANCE: ft.Colors.CYAN_700,
+    AttackTactic.RESOURCE_DEVELOPMENT: ft.Colors.BLUE_700,
+    AttackTactic.INITIAL_ACCESS: ft.Colors.ORANGE_700,
+    AttackTactic.EXECUTION: ft.Colors.RED_700,
+    AttackTactic.PERSISTENCE: ft.Colors.PURPLE_700,
+    AttackTactic.PRIVILEGE_ESCALATION: ft.Colors.DEEP_ORANGE_700,
+    AttackTactic.DEFENSE_EVASION: ft.Colors.TEAL_700,
+    AttackTactic.CREDENTIAL_ACCESS: ft.Colors.PINK_700,
+    AttackTactic.DISCOVERY: ft.Colors.INDIGO_700,
+    AttackTactic.LATERAL_MOVEMENT: ft.Colors.AMBER_700,
+    AttackTactic.COLLECTION: ft.Colors.GREEN_700,
+    AttackTactic.COMMAND_AND_CONTROL: ft.Colors.LIME_700,
+    AttackTactic.EXFILTRATION: ft.Colors.BROWN_700,
+    AttackTactic.IMPACT: ft.Colors.DEEP_ORANGE_900,
+}
 
-def _module_node(key: str, mod, chain: Chain, index: int, total: int) -> ft.Control:
+
+def _tactic_badge(tactic: AttackTactic) -> ft.Control:
+    color = _TACTIC_COLORS.get(tactic, ft.Colors.GREY_700)
+    return ft.Container(
+        ft.Text(tactic.display_name, size=9, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+        bgcolor=color,
+        border_radius=4,
+        padding=ft.Padding(left=5, right=5, top=2, bottom=2),
+    )
+
+
+def _module_node(key: str, mod, chain: Chain, index: int, total: int, active: bool) -> ft.Control:
     """A single module node in the chain builder with reorder controls."""
     name = (mod.name if mod and mod.name else key)
     desc = (mod.description[:60] + "…" if mod and mod.description and len(mod.description) > 60 else (mod.description if mod else ""))
+    tactic = mod.tactic if mod else None
+
+    border_color = CYAN if active else ft.Colors.CYAN_900
+    bg_color = "#0d2a3d" if active else NODE_BG
 
     return ft.Draggable(
         group="chain_node",
@@ -42,7 +74,14 @@ def _module_node(key: str, mod, chain: Chain, index: int, total: int) -> ft.Cont
                     ),
                     ft.Column(
                         [
-                            ft.Text(name, weight=ft.FontWeight.BOLD, size=13, color=CYAN),
+                            ft.Row(
+                                [
+                                    ft.Text(name, weight=ft.FontWeight.BOLD, size=13, color=CYAN),
+                                    _tactic_badge(tactic) if tactic else ft.Container(),
+                                ],
+                                spacing=6,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            ),
                             ft.Text(desc, size=11, color=ft.Colors.GREY_400, no_wrap=False) if desc else ft.Container(),
                         ],
                         expand=True,
@@ -54,15 +93,16 @@ def _module_node(key: str, mod, chain: Chain, index: int, total: int) -> ft.Cont
                         icon_color=ft.Colors.RED_400,
                         on_click=lambda _, k=key: chain.remove_module(k),
                         tooltip="Remove from chain",
+                        disabled=chain.is_running,
                     ),
                 ],
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=8,
             ),
-            bgcolor=NODE_BG,
+            bgcolor=bg_color,
             border_radius=8,
             padding=10,
-            border=ft.Border.all(1, ft.Colors.CYAN_900),
+            border=ft.Border.all(1, border_color),
         ),
         content_when_dragging=ft.Container(
             ft.Text(name, size=13, color=CYAN),
@@ -93,7 +133,8 @@ def ChainBuilder(chain: Chain, state: Apt):
 
     for i, key in enumerate(chain.module_keys):
         mod = state.modules.classes.get(key)
-        nodes.append(_module_node(key, mod, chain, i, total))
+        active = chain.is_running and chain.current_step == i + 1
+        nodes.append(_module_node(key, mod, chain, i, total, active))
         if i < total - 1:
             nodes.append(_arrow())
 
@@ -125,6 +166,22 @@ def ChainBuilder(chain: Chain, state: Apt):
     async def run_chain(e):
         await state.run_chain(chain, e)
 
+    if chain.is_running:
+        status_row = ft.Row(
+            [
+                ft.ProgressRing(width=14, height=14, stroke_width=2, color=CYAN),
+                ft.Text(
+                    f"Running step {chain.current_step}/{total} on {chain.target_count} target{'s' if chain.target_count != 1 else ''}…",
+                    size=12,
+                    color=CYAN,
+                ),
+            ],
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+    else:
+        status_row = ft.Container()
+
     return ft.Container(
         ft.Column(
             [
@@ -138,12 +195,13 @@ def ChainBuilder(chain: Chain, state: Apt):
                                     on_click=run_chain,
                                     bgcolor=CYAN,
                                     color=ft.Colors.BLACK,
-                                    disabled=total == 0,
+                                    disabled=total == 0 or chain.is_running,
                                 ),
                                 ft.Button(
                                     "Clear",
                                     on_click=lambda _: chain.clear(),
                                     bgcolor=ft.Colors.GREY_800,
+                                    disabled=chain.is_running,
                                 ),
                             ],
                             spacing=8,
@@ -151,6 +209,7 @@ def ChainBuilder(chain: Chain, state: Apt):
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
+                status_row,
                 ft.Container(height=1, bgcolor=ft.Colors.GREY_800),
                 ft.Column(nodes, spacing=0, scroll=ft.ScrollMode.AUTO, expand=True) if nodes else ft.Container(),
                 drop_zone,

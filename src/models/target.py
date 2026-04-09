@@ -23,6 +23,7 @@ class Target:
     # on_this_target_updated: Callable | None = None
     activity_log: list[str] = field(default_factory=list)
     ports: list[int] = field(default_factory=list)
+    os_guess: str = ""
 
     def update_field(self, field_name, field_value):
         try:
@@ -57,5 +58,6 @@ def create_target(ip: str) -> Target:
     t.ip_label = ip
     t.activity_log = []
     t.ports = []
+    t.os_guess = ""
     t.log_activity(f"Target with {ip} Created")
     return t
