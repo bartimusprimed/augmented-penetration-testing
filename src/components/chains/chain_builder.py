@@ -97,8 +97,8 @@ def ChainBuilder(chain: Chain, state: Apt):
         if i < total - 1:
             nodes.append(_arrow())
 
-    def on_drop(e: ft.Event[ft.DragTarget]):
-        key = e.data
+    def on_drop(e: ft.DragTargetEvent):
+        key = e.src.data if e.src is not None and e.src_id is not None else None
         if key and key not in chain.module_keys:
             chain.add_module(key)
 
