@@ -6,6 +6,7 @@ from models.module_metadata import AttackTactic
 CYAN = ft.Colors.CYAN_400
 NODE_BG = "#1a2d3d"
 DRAG_BG = "#0d3050"
+ACTIVE_NODE_BG = "#0d2a3d"
 
 _TACTIC_COLORS: dict[AttackTactic, str] = {
     AttackTactic.RECONNAISSANCE: ft.Colors.CYAN_700,
@@ -42,7 +43,7 @@ def _module_node(key: str, mod, chain: Chain, index: int, total: int, active: bo
     tactic = mod.tactic if mod else None
 
     border_color = CYAN if active else ft.Colors.CYAN_900
-    bg_color = "#0d2a3d" if active else NODE_BG
+    bg_color = ACTIVE_NODE_BG if active else NODE_BG
 
     return ft.Draggable(
         group="chain_node",

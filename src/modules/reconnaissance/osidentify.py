@@ -27,7 +27,7 @@ def _guess_os_from_ttl(ttl: int) -> str:
 class osidentify(APT_MODULE):
     name = "OS Identify (TTL)"
     description = (
-        "Sends an ICMP Echo Request and analyses the response TTL to estimate "
+        "Sends an ICMP Echo Request and analyzes the response TTL to estimate "
         "the target operating system. Windows typically uses TTL 128, "
         "Linux/macOS use TTL 64, and network appliances use TTL 255."
     )
@@ -44,7 +44,7 @@ class osidentify(APT_MODULE):
         from scapy.layers.inet import IP, ICMP  # type: ignore
         from scapy.sendrecv import sr1  # type: ignore
 
-        target.log_activity("Sending ICMP Echo Request for OS fingerprinting…", True)
+        target.log_activity("Sending ICMP Echo Request for OS fingerprinting...", True)
         response = sr1(
             IP(dst=target.ip_label) / ICMP(), timeout=2, verbose=0)
 
