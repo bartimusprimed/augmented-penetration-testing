@@ -1,8 +1,6 @@
 from modules.base_module import APT_MODULE
 from models.target import Target, MESSAGE_TYPE
 from models.module_metadata import AttackTactic, TargetOS, TargetArch
-from scapy.all import *  # type: ignore
-from scapy.layers.l2 import arping, Ether, ARP
 
 
 class arpping(APT_MODULE):
@@ -21,6 +19,8 @@ class arpping(APT_MODULE):
         super().__init__()
 
     def action(self, target: Target):
+        from scapy.all import srp  # type: ignore
+        from scapy.layers.l2 import Ether, ARP  # type: ignore
         target.log_activity("Sending ARP...", True)
         response, _ = srp(
             Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=target.ip_label), timeout=1, verbose=1)
