@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from utils.module_loader import ModuleLoader
 from models.target import Target, create_target
+from models.chain import Chain
 
 
 @ft.observable
@@ -13,6 +14,7 @@ from models.target import Target, create_target
 class Apt:
     targets: list[Target] = field(default_factory=list)
     modules: ModuleLoader = ModuleLoader()
+    chains: list[Chain] = field(default_factory=list)
     version: str = "0.0.1 (Alpha)"
     title: str = "APT"
     description: str = "Augmented Penetration Testing"
@@ -90,3 +92,29 @@ class Apt:
                 t.update_field("current_status", "Running...")
                 e.page.run_thread(get_class.run, t)  # type: ignore
             get_class.is_running = False
+
+    def create_chain(self, name: str = "New Chain") -> Chain:
+        chain = Chain(name=name)
+        self.chains.append(chain)
+        self.trigger_update()
+        return chain
+
+    def remove_chain(self, chain: Chain):
+        if chain in self.chains:
+            self.chains.remove(chain)
+            self.trigger_update()
+
+    async def run_chain(self, chain: Chain, e: ft.Event):
+        selected = self.get_selected_targets()
+        if not selected:
+            ft.context.page.show_dialog(ft.AlertDialog(
+                title=ft.Text("No Targets Selected"),
+                icon=ft.Icon(ft.Icons.WARNING_OUTLINED),
+            ))
+            return
+        for key in chain.module_keys:
+            mod = self.modules.classes.get(key)
+            if mod is not None:
+                for t in selected:
+                    t.update_field("current_status", f"Running {mod.name or key}...")
+                    e.page.run_thread(mod.run, t)  # type: ignore
