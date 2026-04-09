@@ -24,6 +24,14 @@ class Target:
     activity_log: list[str] = field(default_factory=list)
     ports: list[int] = field(default_factory=list)
     os_guess: str = ""
+    # C2 beacon fields
+    beacon_session_id: str = ""
+    beacon_last_seen: float = 0.0
+    beacon_interval: int = 10
+    beacon_connected: bool = False
+    beacon_c2_port: int = 8443
+    beacon_pid: int = 0
+    beacon_shell_history: list[str] = field(default_factory=list)
 
     def update_field(self, field_name, field_value):
         try:
@@ -59,5 +67,6 @@ def create_target(ip: str) -> Target:
     t.activity_log = []
     t.ports = []
     t.os_guess = ""
+    t.beacon_shell_history = []
     t.log_activity(f"Target with {ip} Created")
     return t

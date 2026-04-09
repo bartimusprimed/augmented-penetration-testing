@@ -38,6 +38,28 @@ def Chains(state: Apt):
         ),
         ft.Container(height=1, bgcolor=ft.Colors.GREY_800),
     ]
+
+    selected_count = len(state.get_selected_targets())
+    chain_list_items.append(
+        ft.Container(
+            ft.Row(
+                [
+                    ft.Icon(
+                        ft.Icons.ADJUST,
+                        size=14,
+                        color=ft.Colors.GREEN_400 if selected_count > 0 else ft.Colors.GREY_600,
+                    ),
+                    ft.Text(
+                        f"{selected_count} target{'s' if selected_count != 1 else ''} selected",
+                        size=12,
+                        color=ft.Colors.GREEN_400 if selected_count > 0 else ft.Colors.GREY_600,
+                    ),
+                ],
+                spacing=4,
+            ),
+            padding=ft.Padding(left=2, right=2, top=4, bottom=4),
+        )
+    )
     for chain in state.chains:
         chain_list_items.append(ChainCard(chain=chain, state=state, on_select=select_chain))
 
