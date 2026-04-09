@@ -1,6 +1,7 @@
+import logging
 import flet as ft
 from abc import ABC, abstractmethod
-from models.target import Target
+from models.target import Target, MESSAGE_TYPE
 from models.module_metadata import AttackTactic, TargetOS, TargetArch
 
 
@@ -28,7 +29,16 @@ class APT_MODULE(ABC):
         target.start_work()
         target.log_activity(
             f"---Start {self.__class__.__name__.upper()} Module---")
-        self.action(target)
+        try:
+            self.action(target)
+        except PermissionError as exc:
+            msg = (
+                "Permission denied – raw socket access requires elevated privileges. "
+                "On macOS/Linux run the app with sudo, or grant the Python executable "
+                "the cap_net_raw capability."
+            )
+            logging.log(logging.ERROR, f"{self.__class__.__name__}: {exc}")
+            target.log_activity(msg, True, MESSAGE_TYPE.ERROR)
         target.log_activity(
             f"---Finish {self.__class__.__name__.upper()} Module---")
         target.finish_work()

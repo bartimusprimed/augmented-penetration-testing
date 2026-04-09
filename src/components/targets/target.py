@@ -33,21 +33,35 @@ def target(t: Target, state: Apt):
 
     target_ip = ft.Text(t.ip_label, weight=ft.FontWeight.BOLD, size=24)
     target_status = ft.Text(
-        t.current_status, expand=True, expand_loose=True, no_wrap=False)
+        t.current_status,
+        no_wrap=False,
+        max_lines=3,
+        overflow=ft.TextOverflow.ELLIPSIS,
+        text_align=ft.TextAlign.CENTER,
+        size=12,
+    )
     return ft.Container(
         ft.Card(
-            ft.Column(
-                [
-                    ft.Row(
-                        [ft.Checkbox("Selected", t.is_selected, on_change=update_target_field_and_notify, label_position=ft.LabelPosition.RIGHT)], alignment=ft.MainAxisAlignment.CENTER),
-                    target_ip,
-                    ft.Row([
-                        ft.Text("Status:"),
-                        target_status,
-                    ], alignment=ft.MainAxisAlignment.CENTER),
-                    ft.Button("Target Details", data=t.ip_label,
-                              on_click=show_target_details, elevation=5, bgcolor=ft.Colors.BLUE_GREY)
-                ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            ft.Container(
+                ft.Column(
+                    [
+                        ft.Row(
+                            [ft.Checkbox("Selected", t.is_selected, on_change=update_target_field_and_notify, label_position=ft.LabelPosition.RIGHT)], alignment=ft.MainAxisAlignment.CENTER),
+                        target_ip,
+                        ft.Column(
+                            [
+                                ft.Text("Status:", size=12, weight=ft.FontWeight.BOLD),
+                                target_status,
+                            ],
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                            spacing=2,
+                        ),
+                        ft.Button("Target Details", data=t.ip_label,
+                                  on_click=show_target_details, elevation=5, bgcolor=ft.Colors.BLUE_GREY)
+                    ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                ),
+                padding=8,
+                clip_behavior=ft.ClipBehavior.HARD_EDGE,
             ), elevation=3, bgcolor=t.color_status
         ), alignment=ft.Alignment.CENTER, expand=True
     )

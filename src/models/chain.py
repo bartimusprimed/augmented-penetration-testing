@@ -8,6 +8,9 @@ from dataclasses import dataclass, field
 class Chain:
     name: str = "New Chain"
     module_keys: list[str] = field(default_factory=list)
+    is_running: bool = False
+    current_step: int = 0
+    target_count: int = 0
 
     def trigger_update(self):
         cast(ft.Observable, self).notify()

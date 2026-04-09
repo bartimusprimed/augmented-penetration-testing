@@ -112,9 +112,27 @@ class Apt:
                 icon=ft.Icon(ft.Icons.WARNING_OUTLINED),
             ))
             return
-        for key in chain.module_keys:
-            mod = self.modules.classes.get(key)
-            if mod is not None:
-                for t in selected:
-                    t.update_field("current_status", f"Running {mod.name or key}...")
-                    e.page.run_thread(mod.run, t)  # type: ignore
+
+        def execute_chain():
+            import concurrent.futures
+            chain.is_running = True
+            chain.target_count = len(selected)
+            chain.trigger_update()
+            try:
+                for i, key in enumerate(chain.module_keys):
+                    mod = self.modules.classes.get(key)
+                    if mod is None:
+                        continue
+                    chain.current_step = i + 1
+                    chain.trigger_update()
+                    for t in selected:
+                        t.update_field("current_status", f"Chain step {i + 1}/{len(chain.module_keys)}: {mod.name or key}...")
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        futures = [executor.submit(mod.run, t) for t in selected]
+                        concurrent.futures.wait(futures)
+            finally:
+                chain.is_running = False
+                chain.current_step = 0
+                chain.trigger_update()
+
+        e.page.run_thread(execute_chain)
