@@ -142,7 +142,7 @@ class Apt:
                     ),
                     target_labels,
                     ft.Text(
-                        "This could be destructive. Make sure you have authorisation.",
+                        "This could be destructive. Make sure you have authorization.",
                         size=12,
                         color=ft.Colors.AMBER_400,
                         italic=True,

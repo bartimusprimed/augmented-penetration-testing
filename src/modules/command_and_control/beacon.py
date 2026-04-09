@@ -144,5 +144,14 @@ class beacon(APT_MODULE):
         except Exception as exc:
             target.log_activity(f"Failed to start beacon: {exc}", True, MESSAGE_TYPE.ERROR)
 
+    def push_command(self, session_id: str, command: str) -> bool:
+        """Queue a shell command for delivery to the beacon on next check-in.
+
+        Returns True if a C2 server is running and the session exists.
+        """
+        if self._c2_server is None:
+            return False
+        return self._c2_server.push_command(session_id, command)
+
     def enable(self, e):
         self.enabled = e

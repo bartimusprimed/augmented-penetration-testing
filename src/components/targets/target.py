@@ -42,13 +42,11 @@ def _shell_tab(t: Target, state: Apt):
         cmd = cmd_text.strip()
         if not cmd or not t.beacon_session_id:
             return
-        # Retrieve C2 server from the beacon module (if running)
+        # Use the beacon module's public push_command method
         beacon_mod = state.modules.classes.get("beacon")
-        if beacon_mod and beacon_mod._c2_server:
-            ok = beacon_mod._c2_server.push_command(t.beacon_session_id, cmd)
-            if ok:
-                t.beacon_shell_history.append(f"$ {cmd}")
-                cast(ft.Observable, t).notify()
+        if beacon_mod and beacon_mod.push_command(t.beacon_session_id, cmd):
+            t.beacon_shell_history.append(f"$ {cmd}")
+            cast(ft.Observable, t).notify()
         set_cmd_text("")
 
     history_items = [

@@ -80,7 +80,7 @@ def ModulePalette(state: Apt):
         ft.Text("Available Modules", size=13, weight=ft.FontWeight.BOLD, color=CYAN),
         ft.Text("Drag into chain →", size=11, color=ft.Colors.GREY_500),
         ft.Container(
-            ft.Column(chip_items, spacing=4, wrap=True),
+            ft.Row(chip_items, wrap=True, spacing=4, run_spacing=4),
             padding=ft.Padding(left=0, right=0, top=4, bottom=4),
         ),
         ft.Container(height=1, bgcolor=ft.Colors.GREY_800),
