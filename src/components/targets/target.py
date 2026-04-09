@@ -32,6 +32,7 @@ def _overview_tab(t: Target):
     )
 
 
+@ft.component
 def _shell_tab(t: Target, state: Apt):
     """Emulated shell: send commands to beacon, view output history."""
     cmd_text, set_cmd_text = ft.use_state("")

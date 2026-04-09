@@ -15,8 +15,12 @@ dependencies = [
 [dependency-groups]
 dev = [
   "flet[all]>=0.84.0",
-  "scapy>=2.7.0"
+  "scapy>=2.7.0",
+  "pytest>=8.0",
 ]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.flet]
 # Docs: https://flet.dev/docs/publish
 org = "llc.augmentedsecurity"
