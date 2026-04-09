@@ -4,7 +4,13 @@
 
 ### What is APT?
 
-APT is a toolkit built for easily incorporating custom pythong scripts into a repeatable and auditable environment.
+APT is a toolkit built for easily incorporating custom python scripts into a repeatable and auditable environment.
+
+### Requirements
+
+- Python ≥ 3.10
+- [Flet](https://flet.dev) ≥ 0.84.0
+- [Scapy](https://scapy.net) ≥ 2.7.0
 
 ### Why not just add modules to metasploit or some other toolkit?
 
