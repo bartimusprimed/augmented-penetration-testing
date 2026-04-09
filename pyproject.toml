@@ -8,14 +8,14 @@ authors = [
     { name = "Bartimus", email = "bartimusprimed" }
 ]
 dependencies = [
-  "flet>=0.80.2",
-  "scapy>=2.6.1"
+  "flet>=0.84.0",
+  "scapy>=2.7.0"
 ]
 
 [dependency-groups]
 dev = [
   "flet[all]>=0.84.0",
-  "scapy>=2.6.1"
+  "scapy>=2.7.0"
 ]
 [tool.flet]
 # Docs: https://flet.dev/docs/publish

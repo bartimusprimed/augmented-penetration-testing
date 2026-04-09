@@ -14,7 +14,7 @@ def Hero(state: Apt):
                     src="icon.png",
                     width=220,
                     height=220,
-                    fit=ft.ImageFit.CONTAIN,
+                    fit=ft.BoxFit.CONTAIN,
                     border_radius=24,
                 ),
                 ft.Text(

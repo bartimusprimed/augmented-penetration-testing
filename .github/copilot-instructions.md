@@ -144,6 +144,10 @@ class mymodule(APT_MODULE):
         super().__init__()
 
     def action(self, target: Target):
+        # Import heavy dependencies (e.g. scapy) here – NOT at module top-level –
+        # so the app starts fast and doesn't crash on import on restricted platforms.
+        # from scapy.layers.inet import IP  # type: ignore
+
         # All module logic goes here.
         # Use target.log_activity() to report progress.
         target.log_activity("Starting my module...", True)
@@ -205,6 +209,8 @@ Pass `state: Apt` down to every component/view that needs it (prop-drilling; no 
 ---
 
 ## Running the App
+
+> **Requirements**: Python ≥ 3.10, Flet ≥ 0.84.0, Scapy ≥ 2.7.0
 
 ```bash
 # With uv (recommended)

@@ -2,8 +2,6 @@ import logging
 from modules.base_module import APT_MODULE
 from models.target import Target, MESSAGE_TYPE
 from models.module_metadata import AttackTactic, TargetOS, TargetArch
-from scapy.layers.inet import IP, ICMP  # type: ignore
-from scapy.sendrecv import sr1  # type: ignore
 
 
 class icmpping(APT_MODULE):
@@ -22,6 +20,8 @@ class icmpping(APT_MODULE):
         super().__init__()
 
     def action(self, target: Target):
+        from scapy.layers.inet import IP, ICMP  # type: ignore
+        from scapy.sendrecv import sr1  # type: ignore
         target.log_activity("Sending ICMP Echo Request...", True)
         response = sr1(
             IP(dst=target.ip_label) / ICMP(), timeout=2, verbose=0)

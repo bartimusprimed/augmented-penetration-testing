@@ -16,24 +16,22 @@ def NavBar(current_page: int, function_to_call: Callable) -> ft.Container:
 
     def _nav_button(icon, label, index):
         selected = current_page == index
-        return ft.Tooltip(
-            message=label,
-            content=ft.IconButton(
-                icon=icon,
-                icon_color=CYAN if selected else ft.Colors.GREY_500,
-                icon_size=26,
-                on_click=lambda _, i=index: function_to_call(i),
-                style=ft.ButtonStyle(
-                    shape=ft.RoundedRectangleBorder(radius=8),
-                    bgcolor={
-                        ft.ControlState.DEFAULT: ft.Colors.CYAN_900 if selected else ft.Colors.TRANSPARENT,
-                    },
-                ),
+        return ft.IconButton(
+            icon=icon,
+            icon_color=CYAN if selected else ft.Colors.GREY_500,
+            icon_size=26,
+            tooltip=label,
+            on_click=lambda _, i=index: function_to_call(i),
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=8),
+                bgcolor={
+                    ft.ControlState.DEFAULT: ft.Colors.CYAN_900 if selected else ft.Colors.TRANSPARENT,
+                },
             ),
         )
 
     logo = ft.Container(
-        ft.Image(src="icon.png", width=36, height=36, fit=ft.ImageFit.CONTAIN),
+        ft.Image(src="icon.png", width=36, height=36, fit=ft.BoxFit.CONTAIN),
         margin=ft.Margin(bottom=16, top=8, left=0, right=0),
     )
 

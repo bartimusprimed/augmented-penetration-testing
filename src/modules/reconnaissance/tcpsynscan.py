@@ -2,8 +2,6 @@ import logging
 from modules.base_module import APT_MODULE
 from models.target import Target, MESSAGE_TYPE
 from models.module_metadata import AttackTactic, TargetOS, TargetArch
-from scapy.layers.inet import IP, TCP  # type: ignore
-from scapy.sendrecv import sr  # type: ignore
 
 COMMON_PORTS = [
     21, 22, 23, 25, 53, 80, 110, 111, 135, 139,
@@ -28,6 +26,8 @@ class tcpsynscan(APT_MODULE):
         super().__init__()
 
     def action(self, target: Target):
+        from scapy.layers.inet import IP, TCP  # type: ignore
+        from scapy.sendrecv import sr  # type: ignore
         target.log_activity(
             f"Starting TCP SYN scan on {len(COMMON_PORTS)} common ports...", True)
         answered, _ = sr(

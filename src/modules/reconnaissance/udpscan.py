@@ -2,8 +2,6 @@ import logging
 from modules.base_module import APT_MODULE
 from models.target import Target, MESSAGE_TYPE
 from models.module_metadata import AttackTactic, TargetOS, TargetArch
-from scapy.layers.inet import IP, UDP, ICMP  # type: ignore
-from scapy.sendrecv import sr  # type: ignore
 
 COMMON_UDP_PORTS = [
     53, 67, 68, 69, 123, 137, 138, 161, 162,
@@ -28,6 +26,8 @@ class udpscan(APT_MODULE):
         super().__init__()
 
     def action(self, target: Target):
+        from scapy.layers.inet import IP, UDP, ICMP  # type: ignore
+        from scapy.sendrecv import sr  # type: ignore
         target.log_activity(
             f"Starting UDP scan on {len(COMMON_UDP_PORTS)} common ports...", True)
         answered, _ = sr(
