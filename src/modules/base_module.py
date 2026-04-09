@@ -1,3 +1,4 @@
+import sys
 import logging
 import flet as ft
 from abc import ABC, abstractmethod
@@ -32,11 +33,21 @@ class APT_MODULE(ABC):
         try:
             self.action(target)
         except PermissionError as exc:
-            msg = (
-                "Permission denied – raw socket access requires elevated privileges. "
-                "On macOS/Linux run the app with sudo, or grant the Python executable "
-                "the cap_net_raw capability."
-            )
+            if sys.platform == "darwin":
+                msg = (
+                    "Permission denied – raw packet operations require BPF device "
+                    "access on macOS. Do NOT run APT with sudo (macOS blocks GUI apps "
+                    "as root). Grant BPF access once:\n"
+                    "  sudo dseditgroup -o edit -a \"$USER\" -t user access_bpf\n"
+                    "Log out and back in, then restart APT."
+                )
+            else:
+                msg = (
+                    "Permission denied – raw socket access requires elevated "
+                    "privileges. On Linux: grant cap_net_raw to the Python executable "
+                    "(sudo setcap cap_net_raw+eip <path/to/python>), or run with sudo. "
+                    "Use 'which python3' or check sys.executable for the correct path."
+                )
             logging.log(logging.ERROR, f"{self.__class__.__name__}: {exc}")
             target.log_activity(msg, True, MESSAGE_TYPE.ERROR)
         target.log_activity(

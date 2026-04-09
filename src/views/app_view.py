@@ -6,6 +6,7 @@ from views.modules_view import Modules
 from views.chains_view import Chains
 from components.app.navbar import NavBar
 from models.apt import Apt
+from utils.permissions import check_raw_packet_access
 
 APP_BG = "#0d1b24"
 
@@ -14,6 +15,20 @@ APP_BG = "#0d1b24"
 def App():
     apt_state, _ = ft.use_state(lambda: Apt())
     current_page, set_current_page = ft.use_state(0)
+
+    def _show_startup_warning():
+        warning = check_raw_packet_access()
+        if warning:
+            ft.context.page.show_dialog(ft.AlertDialog(
+                icon=ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=ft.Colors.AMBER_400, size=40),
+                title=ft.Text("Privilege Setup Required"),
+                content=ft.Text(warning, selectable=True),
+                actions=[
+                    ft.TextButton("OK", on_click=lambda _: ft.context.page.pop_dialog()),
+                ],
+            ))
+
+    ft.on_mounted(_show_startup_warning)
 
     def goto_page(page_index):
         set_current_page(page_index)
