@@ -1,0 +1,107 @@
+direction: right
+
+App: {
+  label: "APT Application"
+  shape: rectangle
+
+  UI Layer: {
+    label: "UI Layer (Flet @ft.component)"
+    style.fill: "#e8f4fd"
+
+    Views: {
+      label: "Views"
+      Home View
+      Targets View
+      Modules View
+      Settings View
+    }
+
+    Components: {
+      label: "Components"
+      NavBar
+      Target List
+      Target Card
+      Add Target
+      Target Actions
+      Module List
+    }
+  }
+
+  State Layer: {
+    label: "State Layer (@ft.observable)"
+    style.fill: "#fff3e0"
+
+    Apt: {
+      label: "Apt (Root State)"
+      targets: list\[Target\]
+      modules: ModuleLoader
+      version: str
+    }
+
+    Target: {
+      label: "Target"
+      ip_label: str
+      is_alive: bool
+      is_busy: bool
+      is_selected: bool
+      current_status: str
+      color_status: ft.Colors
+      activity_log: list\[str\]
+      ports: list\[int\]
+    }
+  }
+
+  Module Layer: {
+    label: "Module Layer"
+    style.fill: "#e8f5e9"
+
+    ModuleLoader: {
+      label: "ModuleLoader"
+      module_classes: "classes: dict[str, APT_MODULE]"
+    }
+
+    APT_MODULE: {
+      label: "APT_MODULE (ABC)"
+      name: str
+      description: str
+      tactic: AttackTactic
+      technique_id: str
+      compatible_os: list\[TargetOS\]
+      compatible_arch: list\[TargetArch\]
+    }
+
+    Reconnaissance: {
+      label: "Reconnaissance Modules"
+      arpping: "ARP Ping\n(T1595.001)"
+      icmpping: "ICMP Ping\n(T1595.001)"
+      tcpsynscan: "TCP SYN Scan\n(T1046)"
+      udpscan: "UDP Scan\n(T1046)"
+    }
+  }
+
+  Module Metadata: {
+    label: "Module Metadata"
+    style.fill: "#fce4ec"
+    AttackTactic: "AttackTactic (MITRE ATT&CK)"
+    TargetOS: "TargetOS (Windows/Linux/macOS/Any)"
+    TargetArch: "TargetArch (x86/x64/ARM/Any)"
+  }
+}
+
+# UI to State connections
+App.UI Layer.Views -> App.State Layer.Apt: "reads / triggers"
+App.UI Layer.Components -> App.State Layer.Apt: "reads / triggers"
+App.UI Layer.Components -> App.State Layer.Target: "reads / triggers"
+
+# State to Module connections
+App.State Layer.Apt -> App.Module Layer.ModuleLoader: "owns"
+App.Module Layer.ModuleLoader -> App.Module Layer.APT_MODULE: "loads & indexes"
+App.Module Layer.Reconnaissance -> App.Module Layer.APT_MODULE: "extends"
+
+# Module to Target data flow
+App.Module Layer.APT_MODULE -> App.State Layer.Target: "action(target)\nlog_activity()\nupdate_field()"
+
+# Metadata used by modules and loader
+App.Module Layer.APT_MODULE -> App.Module Metadata.AttackTactic: "tactic"
+App.Module Layer.APT_MODULE -> App.Module Metadata.TargetOS: "compatible_os"
+App.Module Layer.APT_MODULE -> App.Module Metadata.TargetArch: "compatible_arch"

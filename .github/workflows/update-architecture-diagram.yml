@@ -1,0 +1,44 @@
+name: Update Architecture Diagram
+
+on:
+  push:
+    paths:
+      - 'docs/d2/architecture.d2'
+      - 'src/models/**'
+      - 'src/modules/**'
+      - 'src/views/**'
+      - 'src/components/**'
+      - 'src/utils/**'
+
+jobs:
+  generate-diagram:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install d2
+        run: |
+          D2_VERSION="v0.6.6"
+          curl -L "https://github.com/terrastruct/d2/releases/download/${D2_VERSION}/d2-${D2_VERSION}-linux-amd64.tar.gz" \
+            -o /tmp/d2.tar.gz
+          tar -xzf /tmp/d2.tar.gz -C /tmp
+          echo "/tmp/d2-${D2_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Generate architecture PNG
+        run: d2 --layout elk docs/d2/architecture.d2 docs/d2/architecture.png
+
+      - name: Commit updated diagram
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/d2/architecture.png
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "docs: regenerate architecture diagram [skip ci]"
+            git push
+          fi
