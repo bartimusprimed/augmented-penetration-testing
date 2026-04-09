@@ -37,4 +37,6 @@ message = "APT is ready"
 
 [tool.flet.macos.entitlement]
 "com.apple.security.network.client" = true
+"com.apple.security.network.server" = true
 "com.apple.security.app-sandbox" = false
+"com.apple.security.cs.disable-library-validation" = true

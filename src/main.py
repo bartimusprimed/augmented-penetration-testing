@@ -6,6 +6,14 @@ logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("flet_core").setLevel(logging.INFO)
 
 
+def _check_permissions() -> None:
+    """Log a warning early (pre-UI) if raw packet access is unavailable."""
+    from utils.permissions import check_raw_packet_access
+    warning = check_raw_packet_access()
+    if warning:
+        logging.log(logging.WARNING, "Raw packet access issue detected:\n%s", warning)
+
+
 def _patch_scapy_macos() -> None:
     """On macOS, Scapy parses large BPF/ARP/routing data that can exceed the
     default max_list_count (4096), raising MaximumItemsCount.
@@ -35,6 +43,7 @@ def _patch_scapy_macos() -> None:
 
 
 _patch_scapy_macos()
+_check_permissions()
 
 
 def render_app(page: ft.Page):
