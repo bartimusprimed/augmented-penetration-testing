@@ -186,17 +186,17 @@ def target(t: Target, state: Apt):
             ft.Tabs(
                 tabs=[
                     ft.Tab(
-                        text="Overview",
+                        "Overview",
                         icon=ft.Icons.LIST_ALT_OUTLINED,
                         content=_overview_tab(t=selected_target),
                     ),
                     ft.Tab(
-                        text="Shell",
+                        "Shell",
                         icon=ft.Icons.TERMINAL,
                         content=_shell_tab(t=selected_target, state=state),
                     ),
                     ft.Tab(
-                        text="Beacon",
+                        "Beacon",
                         icon=ft.Icons.WIFI_TETHERING,
                         content=_beacon_tab(t=selected_target),
                     ),
