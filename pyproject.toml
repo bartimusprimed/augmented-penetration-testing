@@ -1,0 +1,40 @@
+[project]
+name = "APT"
+version = "0.1.0"
+description = "Augmented Penetration Testing"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Bartimus", email = "bartimusprimed" }
+]
+dependencies = [
+  "flet>=0.80.2",
+  "scapy>=2.6.1"
+]
+
+[dependency-groups]
+dev = [
+  "flet[all]>=0.84.0",
+  "scapy>=2.6.1"
+]
+[tool.flet]
+# Docs: https://flet.dev/docs/publish
+org = "llc.augmentedsecurity"
+product = "APT"
+company = "Augmented Security"
+copyright = "Copyright (C) 2025"
+
+[tool.flet.app]
+path = "src"
+
+[tool.flet.app.boot_screen]
+show = true
+message = "APT"
+
+[tool.flet.app.startup_screen]
+show = true
+message = "APT is ready"
+
+[tool.flet.macos.entitlement]
+"com.apple.security.network.client" = true
+"com.apple.security.app-sandbox" = false
