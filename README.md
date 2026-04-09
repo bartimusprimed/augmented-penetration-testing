@@ -1,5 +1,7 @@
 # APT
 
+![APT Hero](src/assets/hero.png)
+
 ## Augmented Penetration Testing
 
 ### What is APT?

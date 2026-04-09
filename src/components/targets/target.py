@@ -22,7 +22,6 @@ def _fmt_last_seen(ts: float) -> str:
     return f"{delta // 3600}h ago"
 
 
-@ft.component
 def _overview_tab(t: Target):
     """Activity log list."""
     entries = [ft.Text(entry, selectable=True) for entry in t.activity_log]
@@ -33,7 +32,6 @@ def _overview_tab(t: Target):
     )
 
 
-@ft.component
 def _shell_tab(t: Target, state: Apt):
     """Emulated shell: send commands to beacon, view output history."""
     cmd_text, set_cmd_text = ft.use_state("")
@@ -118,7 +116,6 @@ def _shell_tab(t: Target, state: Apt):
     )
 
 
-@ft.component
 def _beacon_tab(t: Target):
     """Beacon status and configuration."""
     status_color = ft.Colors.GREEN_400 if t.beacon_connected else ft.Colors.GREY_600
