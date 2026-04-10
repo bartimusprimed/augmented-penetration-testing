@@ -41,15 +41,9 @@ def _shell_tab(t: Target, state: Apt):
     can read/clear its value imperatively.
     """
 
-    cmd_field = ft.TextField(
-        hint_text="Enter shell command…",
-        expand=True,
-        dense=True,
-        border_color=CYAN,
-        focused_border_color=CYAN,
-        disabled=not t.beacon_connected,
-    )
-
+    # send_command is defined before cmd_field; Python closures resolve
+    # free variables at call-time, so cmd_field will be bound by the time
+    # the user actually clicks "Send" or presses Enter.
     def send_command(e):
         cmd = (cmd_field.value or "").strip()
         if not cmd or not t.beacon_session_id:
@@ -61,7 +55,15 @@ def _shell_tab(t: Target, state: Apt):
             cast(ft.Observable, t).notify()
         cmd_field.value = ""
 
-    cmd_field.on_submit = send_command
+    cmd_field = ft.TextField(
+        hint_text="Enter shell command…",
+        expand=True,
+        dense=True,
+        on_submit=send_command,
+        border_color=CYAN,
+        focused_border_color=CYAN,
+        disabled=not t.beacon_connected,
+    )
 
     history_items = [
         ft.Text(entry, selectable=True, font_family="monospace", size=12,
