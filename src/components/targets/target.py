@@ -22,8 +22,8 @@ def _fmt_last_seen(ts: float) -> str:
     return f"{delta // 3600}h ago"
 
 
-def _overview_tab(t: Target):
-    """Activity log list."""
+def _overview_tab_content(t: Target):
+    """Activity log list (plain widget builder)."""
     entries = [ft.Text(entry, selectable=True) for entry in t.activity_log]
     return ft.Container(
         ft.ListView(entries, expand=True, spacing=2),
@@ -32,7 +32,7 @@ def _overview_tab(t: Target):
     )
 
 
-def _shell_tab(t: Target, state: Apt):
+def _shell_tab_content(t: Target, state: Apt):
     """Emulated shell: send commands to beacon, view output history.
 
     This is a plain function (not @ft.component) because it is called from
@@ -124,7 +124,7 @@ def _shell_tab(t: Target, state: Apt):
     )
 
 
-def _beacon_tab(t: Target):
+def _beacon_tab_content(t: Target):
     """Beacon status and configuration."""
     status_color = ft.Colors.GREEN_400 if t.beacon_connected else ft.Colors.GREY_600
     status_label = "Connected" if t.beacon_connected else "Not connected"
@@ -186,47 +186,57 @@ def _beacon_tab(t: Target):
 
 
 @ft.component
+def TargetDetailsContent(t: Target, state: Apt):
+    """Reactive dialog content for Target Details.
+
+    Because this is a @ft.component, Flet tracks which observable fields are
+    read during rendering and automatically re-renders when they change.  This
+    allows the Overview, Shell, and Beacon tabs to update in realtime (e.g.
+    when C2 beacon check-ins arrive or command results come back).
+    """
+    return ft.Container(
+        ft.Tabs(
+            content=ft.Column(
+                [
+                    ft.TabBar(
+                        tabs=[
+                            ft.Tab("Overview", icon=ft.Icons.LIST_ALT_OUTLINED),
+                            ft.Tab("Shell", icon=ft.Icons.TERMINAL),
+                            ft.Tab("Beacon", icon=ft.Icons.WIFI_TETHERING),
+                        ],
+                    ),
+                    ft.TabBarView(
+                        controls=[
+                            _overview_tab_content(t=t),
+                            _shell_tab_content(t=t, state=state),
+                            _beacon_tab_content(t=t),
+                        ],
+                        expand=True,
+                    ),
+                ],
+                expand=True,
+                spacing=0,
+            ),
+            length=3,
+            expand=True,
+        ),
+        expand=True,
+        height=420,
+        width=520,
+    )
+
+
+@ft.component
 def target(t: Target, state: Apt):
     def show_target_details(e: ft.Event[ft.Button]):
         selected_target = state.get_target(target_ip.value)
-
-        content = ft.Container(
-            ft.Tabs(
-                content=ft.Column(
-                    [
-                        ft.TabBar(
-                            tabs=[
-                                ft.Tab("Overview", icon=ft.Icons.LIST_ALT_OUTLINED),
-                                ft.Tab("Shell", icon=ft.Icons.TERMINAL),
-                                ft.Tab("Beacon", icon=ft.Icons.WIFI_TETHERING),
-                            ],
-                        ),
-                        ft.TabBarView(
-                            controls=[
-                                _overview_tab(t=selected_target),
-                                _shell_tab(t=selected_target, state=state),
-                                _beacon_tab(t=selected_target),
-                            ],
-                            expand=True,
-                        ),
-                    ],
-                    expand=True,
-                    spacing=0,
-                ),
-                length=3,
-                expand=True,
-            ),
-            expand=True,
-            height=420,
-            width=520,
-        )
 
         ft.context.page.show_dialog(
             ft.AlertDialog(
                 title=ft.Text(f"Target: {t.ip_label}"),
                 alignment=ft.Alignment.CENTER,
                 icon=ft.Icon(ft.Icons.INFO_OUTLINED),
-                content=content,
+                content=TargetDetailsContent(t=selected_target, state=state),
                 actions=[
                     ft.TextButton(
                         "Delete Target",

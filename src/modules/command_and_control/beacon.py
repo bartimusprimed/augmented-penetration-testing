@@ -92,12 +92,20 @@ class beacon(APT_MODULE):
         self._c2_server = None
 
     def action(self, target: Target):
+        import flet as ft
         import threading
         import time
         import subprocess
         import sys
+        from typing import cast
 
         from c2.server import C2Server
+
+        # Capture the Flet page reference while running in a Flet-managed
+        # thread.  The C2 server callbacks fire from the HTTP server thread
+        # which has no Flet renderer context, so we schedule target mutations
+        # back onto a Flet-aware thread via page.run_thread().
+        page = ft.context.page
 
         c2_port = getattr(target, "beacon_c2_port", 8443)
         interval = getattr(target, "beacon_interval", 10)
@@ -105,20 +113,27 @@ class beacon(APT_MODULE):
         # Start or reuse the C2 server
         if self._c2_server is None or not self._c2_server.is_running:
             def on_checkin(sess):
-                target.update_field("beacon_session_id", sess.session_id)
-                target.update_field("beacon_last_seen", time.time())
-                target.update_field("beacon_connected", True)
-                target.log_activity(
-                    f"Beacon check-in from {sess.hostname} ({sess.username}@{sess.platform})",
-                    True,
-                    MESSAGE_TYPE.SUCCESS,
-                )
+                def _apply():
+                    target.update_field("beacon_session_id", sess.session_id)
+                    target.update_field("beacon_last_seen", time.time())
+                    target.update_field("beacon_connected", True)
+                    target.log_activity(
+                        f"Beacon check-in from {sess.hostname} ({sess.username}@{sess.platform})",
+                        True,
+                        MESSAGE_TYPE.SUCCESS,
+                    )
+                page.run_thread(_apply)
 
             def on_result(sess, result):
-                output = result.decoded_output()
-                entry = f"[exit:{result.exit_code}]\n{output}"
-                target.beacon_shell_history.append(entry)
-                target.log_activity(f"Task result (exit {result.exit_code}): {output[:120]}")
+                def _apply():
+                    output = result.decoded_output()
+                    entry = f"[exit:{result.exit_code}]\n{output}"
+                    target.beacon_shell_history.append(entry)
+                    target.log_activity(f"Task result (exit {result.exit_code}): {output[:120]}")
+                    # List mutations don't trigger observable notifications;
+                    # manually notify so the UI refreshes.
+                    cast(ft.Observable, target).notify()
+                page.run_thread(_apply)
 
             self._c2_server = C2Server(
                 host="127.0.0.1",
