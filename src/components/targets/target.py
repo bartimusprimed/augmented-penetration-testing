@@ -32,13 +32,26 @@ def _overview_tab(t: Target):
     )
 
 
-@ft.component
 def _shell_tab(t: Target, state: Apt):
-    """Emulated shell: send commands to beacon, view output history."""
-    cmd_text, set_cmd_text = ft.use_state("")
+    """Emulated shell: send commands to beacon, view output history.
+
+    This is a plain function (not @ft.component) because it is called from
+    an on_click event handler which has no active renderer context.  Instead
+    of ft.use_state we hold a direct reference to the TextField widget so we
+    can read/clear its value imperatively.
+    """
+
+    cmd_field = ft.TextField(
+        hint_text="Enter shell command…",
+        expand=True,
+        dense=True,
+        border_color=CYAN,
+        focused_border_color=CYAN,
+        disabled=not t.beacon_connected,
+    )
 
     def send_command(e):
-        cmd = cmd_text.strip()
+        cmd = (cmd_field.value or "").strip()
         if not cmd or not t.beacon_session_id:
             return
         # Use the beacon module's public push_command method
@@ -46,7 +59,9 @@ def _shell_tab(t: Target, state: Apt):
         if beacon_mod and beacon_mod.push_command(t.beacon_session_id, cmd):
             t.beacon_shell_history.append(f"$ {cmd}")
             cast(ft.Observable, t).notify()
-        set_cmd_text("")
+        cmd_field.value = ""
+
+    cmd_field.on_submit = send_command
 
     history_items = [
         ft.Text(entry, selectable=True, font_family="monospace", size=12,
@@ -90,17 +105,7 @@ def _shell_tab(t: Target, state: Apt):
             ),
             ft.Row(
                 [
-                    ft.TextField(
-                        value=cmd_text,
-                        hint_text="Enter shell command…",
-                        expand=True,
-                        dense=True,
-                        on_change=lambda e: set_cmd_text(e.control.value),
-                        on_submit=send_command,
-                        border_color=CYAN,
-                        focused_border_color=CYAN,
-                        disabled=not t.beacon_connected,
-                    ),
+                    cmd_field,
                     ft.IconButton(
                         ft.Icons.SEND,
                         icon_color=CYAN,
