@@ -189,14 +189,13 @@ def _beacon_tab_content(t: Target):
     )
 
 
-@ft.component
 def TargetDetailsContent(t: Target, state: Apt):
-    """Reactive dialog content for Target Details.
+    """Build the dialog content for Target Details.
 
-    Because this is a @ft.component, Flet tracks which observable fields are
-    read during rendering and automatically re-renders when they change.  This
-    allows the Overview, Shell, and Beacon tabs to update in realtime (e.g.
-    when C2 beacon check-ins arrive or command results come back).
+    This is a plain function — NOT a @ft.component — because it is called from
+    show_target_details which is an on_click event handler.  Event handlers run
+    outside the Flet renderer context, so instantiating a @ft.component from
+    one crashes with 'RuntimeError: No current renderer is set'.
     """
     return ft.Container(
         ft.Tabs(
