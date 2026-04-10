@@ -23,7 +23,11 @@ def _fmt_last_seen(ts: float) -> str:
 
 
 def _overview_tab_content(t: Target):
-    """Activity log list (plain widget builder)."""
+    """Activity log list.
+
+    Plain function called from within TargetDetailsContent which is a
+    @ft.component — observable reads here are tracked by the parent.
+    """
     entries = [ft.Text(entry, selectable=True) for entry in t.activity_log]
     return ft.Container(
         ft.ListView(entries, expand=True, spacing=2),
@@ -35,10 +39,10 @@ def _overview_tab_content(t: Target):
 def _shell_tab_content(t: Target, state: Apt):
     """Emulated shell: send commands to beacon, view output history.
 
-    This is a plain function (not @ft.component) because it is called from
-    an on_click event handler which has no active renderer context.  Instead
-    of ft.use_state we hold a direct reference to the TextField widget so we
-    can read/clear its value imperatively.
+    Plain function called from within the TargetDetailsContent @ft.component,
+    which tracks observable reads for reactivity.  Uses a direct reference to
+    the TextField widget (instead of ft.use_state) so the send_command handler
+    can read/clear its value imperatively from an event callback context.
     """
 
     # send_command is defined before cmd_field; Python closures resolve
