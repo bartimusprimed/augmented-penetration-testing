@@ -20,6 +20,11 @@ class APT_MODULE(ABC):
     # instances to avoid sharing the base-class defaults across sibling classes.
     compatible_os: list[TargetOS] = [TargetOS.ANY]
     compatible_arch: list[TargetArch] = [TargetArch.ANY]
+    # Fact system: declare what this module needs before running and what it
+    # writes to the target after running.  These are well-known string keys;
+    # see models.module_metadata.FactKey for canonical constants.
+    consumes: list[str] = []
+    produces: list[str] = []
 
     def __init__(self) -> None:
         super().__init__()
@@ -30,9 +35,11 @@ class APT_MODULE(ABC):
         target.start_work()
         target.log_activity(
             f"---Start {self.__class__.__name__.upper()} Module---")
+        success = True
         try:
             self.action(target)
         except PermissionError as exc:
+            success = False
             if sys.platform == "darwin":
                 msg = (
                     "Permission denied – raw packet operations require BPF device "
@@ -50,6 +57,9 @@ class APT_MODULE(ABC):
                 )
             logging.log(logging.ERROR, f"{self.__class__.__name__}: {exc}")
             target.log_activity(msg, True, MESSAGE_TYPE.ERROR)
+        if success:
+            for fact in self.produces:
+                target.set_fact(fact)
         target.log_activity(
             f"---Finish {self.__class__.__name__.upper()} Module---")
         target.finish_work()

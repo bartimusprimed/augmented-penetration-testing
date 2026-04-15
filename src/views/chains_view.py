@@ -2,6 +2,7 @@ import flet as ft
 from models.apt import Apt
 from models.chain import Chain
 from components.chains.chain_card import ChainCard
+from components.chains.chain_canvas import ChainCanvas
 from components.chains.chain_builder import ChainBuilder
 from components.chains.module_palette import ModulePalette
 
@@ -116,11 +117,11 @@ def Chains(state: Apt):
                                 spacing=8,
                             ),
                             ft.Text(
-                                "Drag modules from the left panel into the chain below, or use + buttons on enabled modules.",
+                                "Drag modules from the left panel onto the canvas. Drag canvas nodes to reposition them.",
                                 size=12,
                                 color=ft.Colors.GREY_500,
                             ),
-                            ChainBuilder(chain=selected_chain, state=state),
+                            ChainCanvas(chain=selected_chain, state=state),
                         ],
                         expand=True,
                         spacing=12,

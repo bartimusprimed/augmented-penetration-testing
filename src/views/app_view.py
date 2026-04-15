@@ -4,6 +4,7 @@ from views.targets_view import Targets
 from views.settings_view import Settings
 from views.modules_view import Modules
 from views.chains_view import Chains
+from views.c2_view import C2View
 from components.app.navbar import NavBar
 from models.apt import Apt
 from utils.permissions import check_raw_packet_access
@@ -43,6 +44,8 @@ def App():
         case 3:
             content = Chains(apt_state)
         case 4:
+            content = C2View(apt_state)
+        case 5:
             content = Settings(apt_state)
         case _:
             content = Home(apt_state)

@@ -137,6 +137,8 @@ class TaskMessage:
     session_id: str = ""
     task_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     command: str = ""
+    module_name: str = ""
+    params: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -148,6 +150,8 @@ class TaskMessage:
             session_id=d.get("session_id", ""),
             task_id=d.get("task_id", ""),
             command=d.get("command", ""),
+            module_name=d.get("module_name", ""),
+            params=d.get("params", {}),
         )
 
 
@@ -161,6 +165,8 @@ class ResultMessage:
     encoding: str = "utf-8"
     exit_code: int = 0
     timestamp: float = field(default_factory=time.time)
+    # Facts the agent discovered during execution (e.g. {"host_alive": True})
+    facts: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -175,6 +181,7 @@ class ResultMessage:
             encoding=d.get("encoding", "utf-8"),
             exit_code=d.get("exit_code", 0),
             timestamp=d.get("timestamp", 0.0),
+            facts=d.get("facts", {}),
         )
 
     def decoded_output(self) -> str:

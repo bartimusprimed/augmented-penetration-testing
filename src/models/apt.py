@@ -171,17 +171,32 @@ class Apt:
             chain.target_count = len(selected)
             chain.trigger_update()
             try:
-                for i, key in enumerate(chain.module_keys):
-                    mod = self.modules.classes.get(key)
-                    if mod is None:
+                topo_order = chain._topo_order()
+                total_steps = len(topo_order)
+                for step_idx, node_id in enumerate(topo_order):
+                    node = chain.nodes.get(node_id)
+                    if node is None:
                         continue
-                    chain.current_step = i + 1
+                    mod = self.modules.classes.get(node.module_key)
+                    if mod is None:
+                        node.status = "skipped"
+                        chain.trigger_update()
+                        continue
+
+                    node.status = "running"
+                    chain.current_step = step_idx + 1
                     chain.trigger_update()
+
+                    step_label = f"Chain step {step_idx + 1}/{total_steps}: {mod.name or node.module_key}..."
                     for t in selected:
-                        t.update_field("current_status", f"Chain step {i + 1}/{len(chain.module_keys)}: {mod.name or key}...")
+                        t.update_field("current_status", step_label)
+
                     with concurrent.futures.ThreadPoolExecutor() as executor:
-                        futures = [executor.submit(mod.run, t) for t in selected]
+                        futures = {executor.submit(mod.run, t): t for t in selected}
                         concurrent.futures.wait(futures)
+
+                    node.status = "success"
+                    chain.trigger_update()
             finally:
                 chain.is_running = False
                 chain.current_step = 0
