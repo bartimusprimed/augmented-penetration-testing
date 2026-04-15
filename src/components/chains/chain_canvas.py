@@ -110,7 +110,7 @@ def ChainCanvas(chain: Chain, state: Apt):
                     ft.Icon(ft.Icons.ACCOUNT_TREE_OUTLINED, color=ft.Colors.GREY_700, size=48),
                     ft.Text("Drag modules here to build the chain", size=13, color=ft.Colors.GREY_600),
                     ft.Text(
-                        "Connect nodes by adding edges via the + button on each card",
+                        "Connect nodes: drag from one node's output to another's input once edge-creation UI is added.",
                         size=11,
                         color=ft.Colors.GREY_700,
                         text_align=ft.TextAlign.CENTER,

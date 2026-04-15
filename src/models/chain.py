@@ -46,6 +46,8 @@ class Chain:
         If the graph has a cycle the remaining nodes are appended in
         arbitrary order so execution can still proceed.
         """
+        from collections import deque
+
         in_degree: dict[str, int] = {nid: 0 for nid in self.nodes}
         successors: dict[str, list[str]] = {nid: [] for nid in self.nodes}
         for src, dst in self.edges:
@@ -53,10 +55,10 @@ class Chain:
                 in_degree[dst] += 1
                 successors[src].append(dst)
 
-        queue = [nid for nid, deg in in_degree.items() if deg == 0]
+        queue: deque[str] = deque(nid for nid, deg in in_degree.items() if deg == 0)
         order: list[str] = []
         while queue:
-            nid = queue.pop(0)
+            nid = queue.popleft()
             order.append(nid)
             for succ in successors.get(nid, []):
                 in_degree[succ] -= 1

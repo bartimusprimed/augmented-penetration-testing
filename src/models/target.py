@@ -41,7 +41,7 @@ class Target:
             setattr(self, field_name, field_value)
             logging.log(
                 logging.DEBUG, f"Updating target attribute {field_name} with the value {field_value}")
-        except:
+        except Exception:
             logging.log(logging.ERROR, "Could not set target attribute")
 
     def set_fact(self, key: str) -> None:

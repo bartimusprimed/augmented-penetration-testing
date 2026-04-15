@@ -40,7 +40,7 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field, asdict
-from typing import Optional
+from typing import Any, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +138,7 @@ class TaskMessage:
     task_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     command: str = ""
     module_name: str = ""
-    params: dict = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -166,7 +166,7 @@ class ResultMessage:
     exit_code: int = 0
     timestamp: float = field(default_factory=time.time)
     # Facts the agent discovered during execution (e.g. {"host_alive": True})
-    facts: dict = field(default_factory=dict)
+    facts: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
