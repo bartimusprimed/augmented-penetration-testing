@@ -5,7 +5,7 @@ from typing import cast
 from dataclasses import dataclass, field
 from pathlib import Path
 from utils.module_loader import ModuleLoader
-from models.target import Target, create_target
+from models.target import Target, create_target, MESSAGE_TYPE
 from models.chain import Chain
 
 
@@ -18,9 +18,53 @@ class Apt:
     version: str = "0.0.1 (Alpha)"
     title: str = "APT"
     description: str = "Augmented Penetration Testing"
+    local_target: Target | None = None
 
     def trigger_update(self):
         cast(ft.Observable, self).notify()
+
+    def start_local_beacon(self) -> None:
+        """Create a localhost target and start the default C2 beacon on it.
+
+        Detects the local OS immediately via ``platform.system()`` and stores
+        it on the target so the UI can display it before the beacon even
+        checks in.  The blocking ``beacon.run()`` call is scheduled on a
+        background thread via ``ft.context.page.run_thread`` so the UI stays
+        responsive.
+
+        Must be called from a Flet-managed context (e.g. an ``on_mounted``
+        handler) so that ``ft.context.page`` is available.
+        """
+        import platform as _platform
+
+        if self.local_target is not None:
+            return
+
+        beacon_mod = self.modules.classes.get("beacon")
+        if beacon_mod is None:
+            return
+
+        local = self.create_new_target("127.0.0.1")
+        local.update_field("os_guess", _platform.system())
+        local.log_activity(
+            f"Local OS detected: {local.os_guess}", True, MESSAGE_TYPE.INFORMATION
+        )
+        self.local_target = local
+        self.trigger_update()
+        ft.context.page.run_thread(beacon_mod.run, local)
+
+    def stop_local_beacon(self) -> None:
+        """Terminate the local beacon subprocess and stop the C2 server.
+
+        Called on app shutdown; safe to call even if the beacon was never
+        started.  Does not require a Flet renderer context.
+        """
+        if self.local_target is None:
+            return
+        beacon_mod = self.modules.classes.get("beacon")
+        if beacon_mod is not None:
+            beacon_mod.shutdown(self.local_target)
+        self.local_target = None
 
     def remove_target(self, t: Target):
         ft.context.page.show_dialog(ft.AlertDialog(

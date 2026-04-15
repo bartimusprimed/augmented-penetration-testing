@@ -28,8 +28,10 @@ def App():
                     ft.TextButton("OK", on_click=lambda _: ft.context.page.pop_dialog()),
                 ],
             ))
+        apt_state.start_local_beacon()
 
     ft.on_mounted(_show_startup_warning)
+    ft.on_unmounted(lambda _: apt_state.stop_local_beacon())
 
     def goto_page(page_index):
         set_current_page(page_index)
