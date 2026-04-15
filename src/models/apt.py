@@ -45,13 +45,26 @@ class Apt:
             return
 
         local = self.create_new_target("127.0.0.1")
-        local.os_guess = _platform.system()
+        local.update_field("os_guess", _platform.system())
         local.log_activity(
             f"Local OS detected: {local.os_guess}", True, MESSAGE_TYPE.INFORMATION
         )
         self.local_target = local
         self.trigger_update()
         ft.context.page.run_thread(beacon_mod.run, local)
+
+    def stop_local_beacon(self) -> None:
+        """Terminate the local beacon subprocess and stop the C2 server.
+
+        Called on app shutdown; safe to call even if the beacon was never
+        started.  Does not require a Flet renderer context.
+        """
+        if self.local_target is None:
+            return
+        beacon_mod = self.modules.classes.get("beacon")
+        if beacon_mod is not None:
+            beacon_mod.shutdown(self.local_target)
+        self.local_target = None
 
     def remove_target(self, t: Target):
         ft.context.page.show_dialog(ft.AlertDialog(

@@ -92,6 +92,7 @@ class beacon(APT_MODULE):
     def __init__(self) -> None:
         super().__init__()
         self._c2_server = None
+        self._beacon_proc = None
 
     def action(self, target: Target):
         import flet as ft
@@ -158,6 +159,7 @@ class beacon(APT_MODULE):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
+            self._beacon_proc = proc
             target.update_field("beacon_pid", proc.pid)
             target.log_activity(f"Beacon process started (PID {proc.pid})", True, MESSAGE_TYPE.SUCCESS)
         except Exception as exc:
@@ -171,6 +173,27 @@ class beacon(APT_MODULE):
         if self._c2_server is None:
             return False
         return self._c2_server.push_command(session_id, command)
+
+    def shutdown(self, target: Target) -> None:
+        """Terminate the beacon subprocess and stop the C2 server.
+
+        Safe to call even if the beacon was never started.
+        """
+        if self._beacon_proc is not None:
+            try:
+                self._beacon_proc.terminate()
+                self._beacon_proc.wait(timeout=5)
+            except OSError:
+                pass
+            self._beacon_proc = None
+            target.update_field("beacon_pid", 0)
+
+        if self._c2_server is not None:
+            self._c2_server.stop()
+            self._c2_server = None
+
+        target.update_field("beacon_connected", False)
+        target.log_activity("Beacon and C2 server stopped", True, MESSAGE_TYPE.INFORMATION)
 
     def enable(self, e):
         self.enabled = e
