@@ -87,7 +87,7 @@ class beacon(APT_MODULE):
     compatible_os = [TargetOS.ANY]
     compatible_arch = [TargetArch.ANY]
     consumes = []
-    produces = ["c2_session"]
+    produces = ["c2_session", "os_identified"]
 
     def __init__(self) -> None:
         super().__init__()
@@ -119,6 +119,8 @@ class beacon(APT_MODULE):
                     target.update_field("beacon_session_id", sess.session_id)
                     target.update_field("beacon_last_seen", time.time())
                     target.update_field("beacon_connected", True)
+                    if sess.platform:
+                        target.update_field("os_guess", sess.platform)
                     target.log_activity(
                         f"Beacon check-in from {sess.hostname} ({sess.username}@{sess.platform})",
                         True,
