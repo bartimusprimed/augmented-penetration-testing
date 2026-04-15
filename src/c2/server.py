@@ -50,6 +50,8 @@ class SessionState:
         self.pending_task: Optional[TaskMessage] = None
         self.results: list[ResultMessage] = []
         self.psk: Optional[str] = None
+        # Facts discovered about this session's host (mirrors Target.facts)
+        self.facts: dict[str, bool] = {}
 
 
 class C2Server:

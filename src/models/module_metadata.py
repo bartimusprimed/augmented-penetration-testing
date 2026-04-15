@@ -1,6 +1,26 @@
 import enum
 
 
+class FactKey:
+    """Well-known fact keys produced and consumed by modules.
+
+    Using string constants (not an Enum) keeps the system open — new modules
+    can introduce new fact keys without modifying this file.  These constants
+    act as canonical names to prevent typo bugs in common keys.
+    """
+    HOST_ALIVE = "host_alive"
+    OPEN_PORTS = "open_ports"
+    OS_IDENTIFIED = "os_identified"
+    SHELL_ACCESS = "shell_access"
+    CREDENTIALS = "credentials"
+    C2_SESSION = "c2_session"
+    PRIVILEGE_ESCALATED = "privilege_escalated"
+    PERSISTENCE_ESTABLISHED = "persistence_established"
+    LATERAL_MOVEMENT_READY = "lateral_movement_ready"
+    DATA_COLLECTED = "data_collected"
+    DATA_EXFILTRATED = "data_exfiltrated"
+
+
 class AttackTactic(enum.Enum):
     RECONNAISSANCE = ("TA0043", "Reconnaissance")
     RESOURCE_DEVELOPMENT = ("TA0042", "Resource Development")

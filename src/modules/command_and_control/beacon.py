@@ -86,6 +86,8 @@ class beacon(APT_MODULE):
     technique_name = "Application Layer Protocol"
     compatible_os = [TargetOS.ANY]
     compatible_arch = [TargetArch.ANY]
+    consumes = []
+    produces = ["c2_session"]
 
     def __init__(self) -> None:
         super().__init__()

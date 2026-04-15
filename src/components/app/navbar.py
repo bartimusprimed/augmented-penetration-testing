@@ -11,7 +11,8 @@ def NavBar(current_page: int, function_to_call: Callable) -> ft.Container:
         (ft.Icons.COMPUTER_OUTLINED, "Targets", 1),
         (ft.Icons.VIEW_MODULE_OUTLINED, "Modules", 2),
         (ft.Icons.LINK_OUTLINED, "Chains", 3),
-        (ft.Icons.SETTINGS_APPLICATIONS_OUTLINED, "Settings", 4),
+        (ft.Icons.WIFI_TETHERING, "C2", 4),
+        (ft.Icons.SETTINGS_APPLICATIONS_OUTLINED, "Settings", 5),
     ]
 
     def _nav_button(icon, label, index):

@@ -14,6 +14,8 @@ class arpping(APT_MODULE):
     technique_name = "Active Scanning: Scanning IP Blocks"
     compatible_os = [TargetOS.ANY]
     compatible_arch = [TargetArch.ANY]
+    consumes = []
+    produces = ["host_alive"]
 
     def __init__(self) -> None:
         super().__init__()
