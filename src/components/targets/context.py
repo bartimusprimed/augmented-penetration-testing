@@ -5,7 +5,10 @@ from models.apt import Apt
 
 @ft.component
 def TargetContextActions(state: Apt, count: int):
-    return ft.Row([
-        ft.Text(f"Targets selected: {count}"),
-        TargetActions(state)
-    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+    return ft.Column(
+        [
+            ft.Text(f"Targets selected: {count}"),
+            TargetActions(state),
+        ],
+        spacing=6,
+    )

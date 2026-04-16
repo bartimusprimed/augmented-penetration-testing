@@ -328,3 +328,40 @@ class TestNoComponentCallsFromEventHandlers:
             "with 'RuntimeError: No current renderer is set':\n"
             + "\n".join(f"  • {v}" for v in violations)
         )
+
+
+# ---------------------------------------------------------------------------
+# 6.  Page notifications: avoid unsupported show_snack_bar API usage
+# ---------------------------------------------------------------------------
+
+class TestPageNotificationCompatibility:
+    """Ensure we don't call Page.show_snack_bar directly.
+
+    Some installed Flet builds in this project do not expose
+    ``Page.show_snack_bar()``, which causes runtime ``AttributeError``.
+    Prefer a compatibility wrapper/fallback (e.g. show dialog fallback).
+    """
+
+    def test_no_direct_show_snack_bar_calls(self):
+        violations: list[str] = []
+
+        for py_file in SRC_DIR.rglob("*.py"):
+            try:
+                tree = ast.parse(py_file.read_text(), filename=str(py_file))
+            except SyntaxError:
+                continue
+
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call):
+                    continue
+                if isinstance(node.func, ast.Attribute) and node.func.attr == "show_snack_bar":
+                    rel = py_file.relative_to(SRC_DIR)
+                    violations.append(
+                        f"{rel}:{node.lineno} — direct call to show_snack_bar() is not allowed; "
+                        "use a compatibility fallback."
+                    )
+
+        assert violations == [], (
+            "Direct Page.show_snack_bar() calls are not compatible in this project:\n"
+            + "\n".join(f"  • {v}" for v in violations)
+        )

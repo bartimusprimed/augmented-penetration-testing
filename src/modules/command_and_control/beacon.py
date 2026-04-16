@@ -10,6 +10,11 @@ starts a local beacon thread that connects back to the C2 server running
 inside APT itself, which is useful for end-to-end testing without a remote
 target.
 """
+from __future__ import annotations
+
+import atexit
+import subprocess
+
 from modules.base_module import APT_MODULE
 from models.target import Target, MESSAGE_TYPE
 from models.module_metadata import AttackTactic, TargetOS, TargetArch
@@ -86,21 +91,34 @@ class beacon(APT_MODULE):
     technique_name = "Application Layer Protocol"
     compatible_os = [TargetOS.ANY]
     compatible_arch = [TargetArch.ANY]
-    consumes = []
-    produces = ["c2_session", "os_identified"]
+    consumes_variables = []
+    produces_variables = ["c2_session", "os_identified"]
 
     def __init__(self) -> None:
         super().__init__()
         self._c2_server = None
-        self._beacon_proc = None
+        self._beacon_procs: dict[str, subprocess.Popen] = {}
+        self._target_session: dict[str, str] = {}
+        self._atexit_registered = False
+
+    def _register_atexit(self) -> None:
+        if self._atexit_registered:
+            return
+        atexit.register(self.shutdown_all)
+        self._atexit_registered = True
+
+    def _cleanup_dead_beacons(self) -> None:
+        dead_targets = [
+            target_key for target_key, proc in self._beacon_procs.items() if proc.poll() is not None
+        ]
+        for target_key in dead_targets:
+            self._beacon_procs.pop(target_key, None)
+            self._target_session.pop(target_key, None)
 
     def action(self, target: Target):
         import flet as ft
-        import threading
         import time
-        import subprocess
         import sys
-        from typing import cast
 
         from c2.server import C2Server
 
@@ -109,6 +127,20 @@ class beacon(APT_MODULE):
         # which has no Flet renderer context, so we schedule target mutations
         # back onto a Flet-aware thread via page.run_thread().
         page = ft.context.page
+        self._register_atexit()
+        self._cleanup_dead_beacons()
+
+        target_key = target.ip_label
+        existing_proc = self._beacon_procs.get(target_key)
+        if existing_proc is not None and existing_proc.poll() is None:
+            target.update_field("beacon_pid", existing_proc.pid)
+            target.update_field("beacon_connected", True)
+            target.log_activity(
+                f"Beacon already running (PID {existing_proc.pid})",
+                True,
+                MESSAGE_TYPE.INFORMATION,
+            )
+            return
 
         c2_port = getattr(target, "beacon_c2_port", 8443)
         interval = getattr(target, "beacon_interval", 10)
@@ -122,6 +154,7 @@ class beacon(APT_MODULE):
                     target.update_field("beacon_connected", True)
                     if sess.platform:
                         target.update_field("os_guess", sess.platform)
+                    self._target_session[target_key] = sess.session_id
                     target.log_activity(
                         f"Beacon check-in from {sess.hostname} ({sess.username}@{sess.platform})",
                         True,
@@ -132,12 +165,14 @@ class beacon(APT_MODULE):
             def on_result(sess, result):
                 def _apply():
                     output = result.decoded_output()
-                    entry = f"[exit:{result.exit_code}]\n{output}"
-                    target.beacon_shell_history.append(entry)
-                    target.log_activity(f"Task result (exit {result.exit_code}): {output[:120]}")
-                    # List mutations don't trigger observable notifications;
-                    # manually notify so the UI refreshes.
-                    cast(ft.Observable, target).notify()
+                    command = sess.task_commands.get(result.task_id, "").strip()
+                    task_label = command if command else result.task_id[:8]
+                    msg_type = MESSAGE_TYPE.SUCCESS if result.exit_code == 0 else MESSAGE_TYPE.ERROR
+                    target.log_activity(
+                        f"Task: {task_label}",
+                        message_type=msg_type,
+                        details=f"Exit code: {result.exit_code}\n\n{output}",
+                    )
                 page.run_thread(_apply)
 
             self._c2_server = C2Server(
@@ -159,7 +194,7 @@ class beacon(APT_MODULE):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            self._beacon_proc = proc
+            self._beacon_procs[target_key] = proc
             target.update_field("beacon_pid", proc.pid)
             target.log_activity(f"Beacon process started (PID {proc.pid})", True, MESSAGE_TYPE.SUCCESS)
         except Exception as exc:
@@ -179,21 +214,43 @@ class beacon(APT_MODULE):
 
         Safe to call even if the beacon was never started.
         """
-        if self._beacon_proc is not None:
+        target_key = target.ip_label
+        proc = self._beacon_procs.pop(target_key, None)
+        self._target_session.pop(target_key, None)
+
+        if proc is not None:
             try:
-                self._beacon_proc.terminate()
-                self._beacon_proc.wait(timeout=5)
+                proc.terminate()
+                proc.wait(timeout=5)
             except OSError:
                 pass
-            self._beacon_proc = None
             target.update_field("beacon_pid", 0)
 
-        if self._c2_server is not None:
+        self._cleanup_dead_beacons()
+
+        if self._c2_server is not None and not self._beacon_procs:
             self._c2_server.stop()
             self._c2_server = None
 
         target.update_field("beacon_connected", False)
         target.log_activity("Beacon and C2 server stopped", True, MESSAGE_TYPE.INFORMATION)
+
+    def shutdown_all(self) -> None:
+        """Terminate all beacon subprocesses and stop the C2 server."""
+        for target_key, proc in list(self._beacon_procs.items()):
+            try:
+                if proc.poll() is None:
+                    proc.terminate()
+                    proc.wait(timeout=5)
+            except OSError:
+                pass
+            finally:
+                self._beacon_procs.pop(target_key, None)
+                self._target_session.pop(target_key, None)
+
+        if self._c2_server is not None:
+            self._c2_server.stop()
+            self._c2_server = None
 
     def enable(self, e):
         self.enabled = e

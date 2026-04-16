@@ -1,11 +1,11 @@
 import enum
 
 
-class FactKey:
-    """Well-known fact keys produced and consumed by modules.
+class VariableKey:
+    """Well-known variable keys produced and consumed by modules.
 
     Using string constants (not an Enum) keeps the system open — new modules
-    can introduce new fact keys without modifying this file.  These constants
+    can introduce new variable keys without modifying this file.  These constants
     act as canonical names to prevent typo bugs in common keys.
     """
     HOST_ALIVE = "host_alive"

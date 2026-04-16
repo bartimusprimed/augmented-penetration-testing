@@ -17,7 +17,7 @@ def _time_ago(ts: float) -> str:
     return f"{int(delta / 3600)}h ago"
 
 
-def _fact_chip(label: str) -> ft.Control:
+def _variable_chip(label: str) -> ft.Control:
     return ft.Container(
         ft.Text(label, size=9, color=ft.Colors.WHITE),
         bgcolor=ft.Colors.GREEN_800,
@@ -27,11 +27,12 @@ def _fact_chip(label: str) -> ft.Control:
 
 
 @ft.component
-def SessionTable(state: Apt, on_select):
+def SessionTable(state: Apt, on_select, tick=False):
     """Render an agent roster table.
 
     ``on_select`` is called with the session_id string when a row is clicked.
     """
+    _ = tick
     beacon_mod = state.modules.classes.get("beacon")
     c2_server = getattr(beacon_mod, "_c2_server", None) if beacon_mod else None
     sessions = list(c2_server.sessions.values()) if c2_server else []
@@ -65,11 +66,11 @@ def SessionTable(state: Apt, on_select):
             ft.Row(
                 [
                     ft.Text("Session ID", size=11, color=ft.Colors.GREY_500, width=90),
-                    ft.Text("Hostname", size=11, color=ft.Colors.GREY_500, expand=True),
+                    ft.Text("Hostname", size=11, color=ft.Colors.GREY_500, width=320),
                     ft.Text("Platform", size=11, color=ft.Colors.GREY_500, width=80),
                     ft.Text("User", size=11, color=ft.Colors.GREY_500, width=100),
                     ft.Text("Last seen", size=11, color=ft.Colors.GREY_500, width=80),
-                    ft.Text("Facts", size=11, color=ft.Colors.GREY_500, width=120),
+                    ft.Text("Variables", size=11, color=ft.Colors.GREY_500, width=120),
                 ],
                 spacing=8,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -81,8 +82,8 @@ def SessionTable(state: Apt, on_select):
     )
 
     for sess in sessions:
-        fact_chips = ft.Row(
-            [_fact_chip(k) for k, v in sess.facts.items() if v],
+        variable_chips = ft.Row(
+            [_variable_chip(k) for k, v in sess.variables.items() if v],
             spacing=4,
             wrap=True,
             width=120,
@@ -96,11 +97,18 @@ def SessionTable(state: Apt, on_select):
                 ft.Row(
                     [
                         ft.Text(sess.session_id[:8], size=12, color=CYAN, width=90, font_family="monospace"),
-                        ft.Text(sess.hostname or "unknown", size=12, color=ft.Colors.WHITE, expand=True),
+                        ft.Text(
+                            sess.hostname or "unknown",
+                            size=12,
+                            color=ft.Colors.WHITE,
+                            width=320,
+                            no_wrap=True,
+                            overflow=ft.TextOverflow.ELLIPSIS,
+                        ),
                         ft.Text(sess.platform or "?", size=12, color=ft.Colors.GREY_300, width=80),
                         ft.Text(sess.username or "?", size=12, color=ft.Colors.GREY_300, width=100),
                         ft.Text(_time_ago(sess.last_seen), size=12, color=ft.Colors.GREY_400, width=80),
-                        fact_chips,
+                        variable_chips,
                     ],
                     spacing=8,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,

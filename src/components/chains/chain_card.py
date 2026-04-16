@@ -6,7 +6,7 @@ CYAN = ft.Colors.CYAN_400
 
 
 @ft.component
-def ChainCard(chain: Chain, state: Apt, on_select):
+def ChainCard(chain: Chain, state: Apt, on_select, on_delete):
     module_count = len(chain.module_keys)
     mod_names = []
     for key in chain.module_keys[:3]:
@@ -41,6 +41,13 @@ def ChainCard(chain: Chain, state: Apt, on_select):
                     [
                         ft.Text(chain.name, weight=ft.FontWeight.BOLD, size=14, color=CYAN, expand=True),
                         step_label,
+                        ft.IconButton(
+                            ft.Icons.DELETE_OUTLINE,
+                            icon_color=ft.Colors.RED_400,
+                            icon_size=14,
+                            tooltip="Delete chain",
+                            on_click=lambda e: on_delete(chain),
+                        ),
                     ],
                 ),
                 ft.Text(preview, size=12, color=ft.Colors.GREY_400, no_wrap=False),

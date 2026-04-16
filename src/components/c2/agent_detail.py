@@ -1,8 +1,8 @@
 """AgentDetail — per-agent detail panel for the C2 view.
 
 Shows task history and provides a manual command input.
-Uses direct widget references (not ft.use_state) because the TextField
-is read from an on_click handler which runs outside renderer context.
+Uses ft.use_state for command input so updates stay compatible with
+frozen control semantics in newer Flet versions.
 """
 import flet as ft
 from models.apt import Apt
@@ -13,6 +13,8 @@ CYAN = ft.Colors.CYAN_400
 @ft.component
 def AgentDetail(state: Apt, session_id: str):
     """Render the detail panel for a specific beacon session."""
+    cmd_value, set_cmd_value = ft.use_state("")
+
     beacon_mod = state.modules.classes.get("beacon")
     c2_server = getattr(beacon_mod, "_c2_server", None) if beacon_mod else None
     sess = None
@@ -34,8 +36,8 @@ def AgentDetail(state: Apt, session_id: str):
             expand=True,
         )
 
-    # Fact chips row
-    fact_chips = ft.Row(
+    # Variable chips row
+    variable_chips = ft.Row(
         [
             ft.Container(
                 ft.Text(k, size=10, color=ft.Colors.WHITE),
@@ -43,7 +45,7 @@ def AgentDetail(state: Apt, session_id: str):
                 border_radius=10,
                 padding=ft.Padding(left=6, right=6, top=2, bottom=2),
             )
-            for k, v in sess.facts.items() if v
+            for k, v in sess.variables.items() if v
         ],
         spacing=4,
         wrap=True,
@@ -99,26 +101,27 @@ def AgentDetail(state: Apt, session_id: str):
             )
         )
 
-    # Manual command input — direct widget reference (NOT ft.use_state)
+    # Manual command input
     cmd_field = ft.TextField(
         hint_text="Shell command…",
+        value=cmd_value,
         border_color=ft.Colors.GREY_700,
         focused_border_color=CYAN,
         text_size=13,
         bgcolor=ft.Colors.GREY_900,
         expand=True,
         dense=True,
-        font_family="monospace",
+        on_change=lambda e: set_cmd_value(e.control.value),
+        on_submit=lambda e: send_command(e),
     )
 
     def send_command(e):
-        cmd = cmd_field.value.strip()
+        cmd = cmd_value.strip()
         if not cmd or beacon_mod is None:
             return
         pushed = beacon_mod.push_command(session_id, cmd)
         if pushed:
-            cmd_field.value = ""
-            cmd_field.update()
+            set_cmd_value("")
         else:
             pass  # silently ignore if server not running
 
@@ -147,11 +150,11 @@ def AgentDetail(state: Apt, session_id: str):
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 ft.Container(height=1, bgcolor=ft.Colors.GREY_800),
-                # Facts
+                # Variables
                 ft.Row(
                     [
-                        ft.Text("Facts:", size=12, color=ft.Colors.GREY_400),
-                        fact_chips,
+                        ft.Text("Variables:", size=12, color=ft.Colors.GREY_400),
+                        variable_chips,
                     ],
                     spacing=8,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,

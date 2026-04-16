@@ -56,7 +56,7 @@ Penetration testers waste time manually sequencing tools and lose track of inter
 
 ## Core Loop
 
-User adds a target IP → selects modules and drags them onto a chain canvas → APT validates prerequisites (fact-chain completeness) → user clicks Run → APT executes nodes in topological order via `ThreadPoolExecutor` → results and discovered facts flow back to the Target model and C2 session view.
+User adds a target IP → selects modules and drags them onto a chain canvas → APT validates prerequisites (variable dependency completeness) → user clicks Run → APT executes nodes in topological order on a Flet-managed thread → results and discovered variables flow back to the Target model and C2 session view.
 
 ---
 
@@ -68,20 +68,20 @@ User adds a target IP → selects modules and drags them onto a chain canvas →
 | Module loader (dynamic discovery) | `[IMPLEMENTED]` | `src/utils/module_loader.py` | |
 | Module execution against targets | `[IMPLEMENTED]` | `src/models/apt.py` | |
 | Chain model (ordered list) | `[IMPLEMENTED]` | `src/models/chain.py` | |
-| Chain builder UI (list + reorder) | `[IMPLEMENTED]` | `src/components/chains/chain_builder.py` | |
+| Chain builder UI (DAG canvas + palette) | `[IMPLEMENTED]` | `src/components/chains/chain_canvas.py`, `src/components/chains/module_palette.py` | |
 | HTTP C2 server + beacon module | `[IMPLEMENTED]` | `src/c2/server.py`, `src/modules/command_and_control/beacon.py` | |
-| Module fact system (consumes/produces) | `[IMPLEMENTED]` | `src/modules/base_module.py`, `src/models/module_metadata.py` | Phase 0 |
-| Target facts set (set_fact/has_fact) | `[IMPLEMENTED]` | `src/models/target.py` | Phase 0 |
+| Module variable system (consumes/provides) | `[IMPLEMENTED]` | `src/modules/base_module.py`, `src/models/module_metadata.py` | Phase 0 |
+| Target variable store | `[IMPLEMENTED]` | `src/models/target.py` | Phase 0 |
 | Chain as DAG (nodes + edges) | `[IMPLEMENTED]` | `src/models/chain.py`, `src/models/chain_node.py` | Phase 1 |
 | Topological chain execution | `[IMPLEMENTED]` | `src/models/apt.py` | Phase 1 |
 | Prerequisite validation | `[IMPLEMENTED]` | `src/models/apt.py` | Phase 1 |
 | Drag-and-drop chain canvas | `[IMPLEMENTED]` | `src/components/chains/chain_canvas.py` | Phase 2 |
-| Chain node cards with fact pills | `[IMPLEMENTED]` | `src/components/chains/chain_node_card.py` | Phase 2 |
+| Chain node cards with variable pills | `[IMPLEMENTED]` | `src/components/chains/chain_node_card.py` | Phase 2 |
 | C2 session management view | `[IMPLEMENTED]` | `src/views/c2_view.py`, `src/components/c2/` | Phase 3 |
-| Session fact tracking (server-side) | `[IMPLEMENTED]` | `src/c2/server.py` | Phase 3 |
+| Session variable tracking (server-side) | `[IMPLEMENTED]` | `src/c2/server.py` | Phase 3 |
 | Module-aware C2 tasking | `[IMPLEMENTED]` | `src/c2/protocol.py` | Phase 4 |
 | Report export | `[NOT IMPLEMENTED]` | | Planned |
-| Persistence (save/load chains) | `[NOT IMPLEMENTED]` | | Planned |
+| Persistence (save/load chains) | `[IMPLEMENTED]` | `src/models/apt.py`, `.apt/chains.json` | |
 | Agent installer/dropper | `[NOT IMPLEMENTED]` | | Planned |
 
 ---
@@ -93,15 +93,15 @@ src/
   main.py                          # Entry point — ft.run(render_app)
   c2/
     protocol.py                    # Message dataclasses (CheckinMessage, TaskMessage, ResultMessage)
-    server.py                      # HTTP C2 server, session management, fact tracking
+    server.py                      # HTTP C2 server, session management, variable tracking
   models/
     apt.py                         # Root state — targets, modules, chains; run_chain (topological)
     chain.py                       # Chain DAG model (nodes dict + edges list)
     chain_node.py                  # ChainNode dataclass (module_key, position, status)
-    module_metadata.py             # AttackTactic, TargetOS, TargetArch, FactKey enums
-    target.py                      # Target observable — ip, status, activity_log, facts set
+    module_metadata.py             # AttackTactic, TargetOS, TargetArch, VariableKey constants
+    target.py                      # Target observable — ip, status, activity_log, variables map
   modules/
-    base_module.py                 # APT_MODULE ABC — consumes/produces + run/action/enable
+    base_module.py                 # APT_MODULE ABC — consumes_variables/produces_variables + OS hooks
     reconnaissance/arpping.py      # ARP ping example module
     command_and_control/beacon.py  # C2 beacon module — produces ["c2_session"]
     [tactic]/[module].py           # Additional modules per MITRE tactic
@@ -114,9 +114,8 @@ src/
     targets/                       # Target card, list, actions
     modules/                       # Module card, list
     chains/
-      chain_builder.py             # List-based chain builder (legacy fallback)
       chain_canvas.py              # Drag-drop DAG canvas (Phase 2)
-      chain_node_card.py           # Draggable node widget with fact pills (Phase 2)
+      chain_node_card.py           # Draggable node widget with variable pills (Phase 2)
       module_palette.py            # Module palette sidebar
       chain_card.py                # Chain list entry card
     c2/

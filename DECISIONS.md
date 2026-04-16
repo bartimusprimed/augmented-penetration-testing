@@ -15,18 +15,18 @@
 
 ---
 
-## Decision: Module fact system — string keys over typed fields
+## Decision: Module variable system — string keys over typed fields
 
 **Date:** 2026-04-15
-**Context:** Modules need to declare prerequisites and outputs so the chain executor can validate ordering and auto-wire DAG edges. Two options: (A) typed enum fields on Target, (B) open string keys in a `facts: set[str]` field with a `FactKey` enum for well-known names.
+**Context:** Modules need to declare prerequisites and outputs so the chain executor can validate ordering and compose DAG steps. Two options: (A) typed fields on Target, (B) open string keys in a `variables: dict[str, Any]` store with a `VariableKey` helper for well-known names.
 **Options considered:**
 - A: Add typed boolean/list fields directly to Target (e.g. `is_alive`, `ports`) — already partially done
-- B: Generic `facts: set[str]` on Target + `FactKey` enum in `module_metadata.py` for well-known keys
+- B: Generic `variables: dict[str, Any]` on Target + `VariableKey` helper in `module_metadata.py` for canonical names
 
-**Choice:** B (generic facts set + FactKey enum)
-**Reason:** Option A requires modifying Target every time a new module type is introduced. Option B is open-closed: new modules can introduce new fact keys without touching the core model. The FactKey enum prevents typo bugs in well-known keys.
+**Choice:** B (generic variable map + VariableKey helper)
+**Reason:** Option A requires modifying Target every time a new module type is introduced. Option B is open-closed: new modules can introduce new variable keys without touching the core model. The helper constants prevent typo bugs in common keys.
 **Reversibility:** Two-way door — can migrate back to typed fields if the open string approach proves hard to maintain.
-**Revisit trigger:** When more than 20 distinct fact keys exist and discoverability becomes a problem.
+**Revisit trigger:** When more than 20 distinct variable keys exist and discoverability becomes a problem.
 
 ---
 
@@ -39,7 +39,7 @@
 - B: Replace with DAG: `nodes: dict[str, ChainNode]` + `edges: list[tuple[str, str]]`
 
 **Choice:** B (DAG)
-**Reason:** A DAG naturally represents prerequisite relationships. Topological sort gives correct execution order for free. Independent nodes run in parallel via `ThreadPoolExecutor`. Option A would require rebuilding the same logic manually.
+**Reason:** A DAG naturally represents prerequisite relationships. Topological sort gives correct execution order for free. Option A would require rebuilding the same logic manually.
 **Reversibility:** One-way door for the model schema — existing `Chain` serialization changes. `module_keys` is kept as a derived property for backward compatibility with any code reading it as a list.
 **Revisit trigger:** If the drag-and-drop canvas proves too complex for users and they prefer a simpler list-based flow.
 

@@ -1,6 +1,6 @@
 """Unit tests for Phase 0 and Phase 1 features.
 
-Phase 0: module fact system (consumes/produces), Target.facts
+Phase 0: module variable system (consumes/provides), Target.variables
 Phase 1: Chain DAG model, topological sort, prerequisite validation
 """
 import sys
@@ -14,67 +14,66 @@ import pytest
 from models.target import Target, create_target
 from models.chain import Chain
 from models.chain_node import ChainNode
-from models.module_metadata import FactKey
+from models.module_metadata import VariableKey
 
 
 # ---------------------------------------------------------------------------
-# Phase 0 — facts system
+# Phase 0 — variable system
 # ---------------------------------------------------------------------------
 
-class TestTargetFacts:
-    def test_new_target_has_empty_facts(self):
+class TestTargetVariables:
+    def test_new_target_has_default_variables(self):
         t = create_target("10.0.0.1")
-        assert isinstance(t.facts, set)
-        assert len(t.facts) == 0
+        assert isinstance(t.variables, dict)
+        assert t.get_variable("target.ip") == "10.0.0.1"
 
-    def test_set_fact_adds_key(self):
+    def test_set_variable_adds_key(self):
         t = create_target("10.0.0.2")
-        t.set_fact("host_alive")
-        assert t.has_fact("host_alive")
+        t.set_variable("host_alive", True)
+        assert t.has_variable("host_alive")
 
-    def test_has_fact_false_for_missing_key(self):
+    def test_has_variable_false_for_missing_key(self):
         t = create_target("10.0.0.3")
-        assert not t.has_fact("open_ports")
+        assert not t.has_variable("open_ports")
 
-    def test_set_fact_syncs_is_alive(self):
+    def test_update_field_syncs_default_variables(self):
         t = create_target("10.0.0.4")
-        assert not t.is_alive
-        t.set_fact(FactKey.HOST_ALIVE)
-        assert t.is_alive
+        t.update_field("is_alive", True)
+        assert t.get_variable("target.is_alive") is True
 
-    def test_multiple_facts(self):
+    def test_multiple_variables(self):
         t = create_target("10.0.0.5")
-        t.set_fact("host_alive")
-        t.set_fact("c2_session")
-        assert t.has_fact("host_alive")
-        assert t.has_fact("c2_session")
-        assert not t.has_fact("credentials")
+        t.set_variable("host_alive", True)
+        t.set_variable("c2_session", True)
+        assert t.has_variable("host_alive")
+        assert t.has_variable("c2_session")
+        assert not t.has_variable("credentials")
 
-    def test_fact_key_constants_are_strings(self):
-        assert isinstance(FactKey.HOST_ALIVE, str)
-        assert isinstance(FactKey.C2_SESSION, str)
-        assert isinstance(FactKey.OPEN_PORTS, str)
+    def test_variable_key_constants_are_strings(self):
+        assert isinstance(VariableKey.HOST_ALIVE, str)
+        assert isinstance(VariableKey.C2_SESSION, str)
+        assert isinstance(VariableKey.OPEN_PORTS, str)
 
 
-class TestAPTModuleFactDeclarations:
+class TestAPTModuleVariableDeclarations:
     def test_base_module_defaults_empty(self):
         # Import and instantiate a concrete module to check defaults
         from modules.reconnaissance.arpping import arpping
         mod = arpping()
-        assert isinstance(mod.consumes, list)
-        assert isinstance(mod.produces, list)
+        assert isinstance(mod.consumes_variables, list)
+        assert isinstance(mod.produces_variables, list)
 
     def test_arpping_produces_host_alive(self):
         from modules.reconnaissance.arpping import arpping
         mod = arpping()
-        assert "host_alive" in mod.produces
-        assert mod.consumes == []
+        assert "host_alive" in mod.produces_variables
+        assert mod.consumes_variables == []
 
     def test_beacon_produces_c2_session(self):
         from modules.command_and_control.beacon import beacon
         mod = beacon()
-        assert "c2_session" in mod.produces
-        assert mod.consumes == []
+        assert "c2_session" in mod.produces_variables
+        assert mod.consumes_variables == []
 
 
 # ---------------------------------------------------------------------------
@@ -197,8 +196,8 @@ class TestChainPrerequisiteValidation:
     class _FakeModule:
         def __init__(self, name, consumes, produces):
             self.name = name
-            self.consumes = consumes
-            self.produces = produces
+            self.consumes_variables = consumes
+            self.produces_variables = produces
 
     class _FakeLoader:
         def __init__(self, classes):

@@ -2,7 +2,7 @@
 
 Modules are dragged from ModulePalette onto the canvas where they become
 positioned ChainNode cards.  Prerequisite warnings are shown when a node's
-``consumes`` facts are not produced by any upstream node.
+required variables are not provided by any upstream node.
 """
 import flet as ft
 from models.chain import Chain

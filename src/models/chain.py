@@ -1,5 +1,5 @@
 import flet as ft
-from typing import cast
+from typing import Callable, cast
 from dataclasses import dataclass, field
 from models.chain_node import ChainNode
 
@@ -22,6 +22,7 @@ class Chain:
     is_running: bool = False
     current_step: int = 0
     target_count: int = 0
+    on_change: Callable[[], None] | None = field(default=None, repr=False, compare=False)
 
     # ------------------------------------------------------------------
     # Backward-compat property
@@ -39,6 +40,8 @@ class Chain:
 
     def trigger_update(self):
         cast(ft.Observable, self).notify()
+        if self.on_change is not None:
+            self.on_change()
 
     def _topo_order(self) -> list[str]:
         """Return node_ids in topological order via Kahn's algorithm.
@@ -68,8 +71,8 @@ class Chain:
         remaining = [nid for nid in self.nodes if nid not in order]
         return order + remaining
 
-    def _produces_for_predecessors(self, node_id: str, module_loader) -> set[str]:
-        """Collect all facts produced by nodes that (transitively) precede node_id."""
+    def _provides_for_predecessors(self, node_id: str, module_loader) -> set[str]:
+        """Collect all variables provided by transitive predecessors of node_id."""
         predecessors: set[str] = set()
         stack = [node_id]
         while stack:
@@ -78,14 +81,14 @@ class Chain:
                 if dst == current and src not in predecessors:
                     predecessors.add(src)
                     stack.append(src)
-        facts: set[str] = set()
+        variables: set[str] = set()
         for nid in predecessors:
             node = self.nodes.get(nid)
             if node:
                 mod = module_loader.classes.get(node.module_key)
                 if mod:
-                    facts.update(mod.produces)
-        return facts
+                    variables.update(mod.produces_variables)
+        return variables
 
     # ------------------------------------------------------------------
     # Mutation helpers
@@ -126,24 +129,22 @@ class Chain:
             self.trigger_update()
 
     def validate_prerequisites(self, module_loader) -> list[str]:
-        """Return a list of human-readable warning strings for unmet prerequisites.
+        """Return warning strings for unmet variable prerequisites.
 
-        A warning is raised when a node's ``consumes`` fact is not produced by
-        any upstream node AND the module declares it as required.  The user may
-        still run the chain (the fact may already exist on the target from a
-        prior run); this is advisory only.
+        A warning is raised when a node requires variables that no upstream
+        node declares as produced.
         """
         warnings: list[str] = []
         for node_id, node in self.nodes.items():
             mod = module_loader.classes.get(node.module_key)
-            if not mod or not mod.consumes:
+            if not mod or not mod.consumes_variables:
                 continue
-            upstream_facts = self._produces_for_predecessors(node_id, module_loader)
-            for fact in mod.consumes:
-                if fact not in upstream_facts:
+            upstream_variables = self._provides_for_predecessors(node_id, module_loader)
+            for var_name in mod.consumes_variables:
+                if var_name not in upstream_variables:
                     warnings.append(
-                        f"'{mod.name}' requires fact '{fact}' but no upstream "
-                        f"module produces it."
+                        f"'{mod.name}' requires variable '{var_name}' but no upstream "
+                        f"module provides it."
                     )
         return warnings
 
@@ -153,7 +154,7 @@ class Chain:
         self.trigger_update()
 
     # ------------------------------------------------------------------
-    # Legacy list-based helpers (keep backward compat for chain_builder)
+    # Legacy list-style helpers used by simple chain manipulation flows.
     # ------------------------------------------------------------------
 
     def add_module(self, key: str):

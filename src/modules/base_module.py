@@ -20,16 +20,28 @@ class APT_MODULE(ABC):
     # instances to avoid sharing the base-class defaults across sibling classes.
     compatible_os: list[TargetOS] = [TargetOS.ANY]
     compatible_arch: list[TargetArch] = [TargetArch.ANY]
-    # Fact system: declare what this module needs before running and what it
-    # writes to the target after running.  These are well-known string keys;
-    # see models.module_metadata.FactKey for canonical constants.
-    consumes: list[str] = []
-    produces: list[str] = []
+    # Variables system: declare what this module needs before running and
+    # what it writes for downstream modules.
+    consumes_variables: list[str] = []
+    produces_variables: list[str] = []
 
     def __init__(self) -> None:
         super().__init__()
         if not self.name:
             self.name = self.__class__.__name__
+
+    def _normalize_target_os(self, target: Target) -> str:
+        raw = str(target.get_variable("target.os", target.os_guess) or "").strip().lower()
+        if "windows" in raw:
+            return "windows"
+        if "linux" in raw:
+            return "linux"
+        if "mac" in raw or "darwin" in raw or "os x" in raw:
+            return "mac"
+        return "other"
+
+    def render_template(self, target: Target, template: str, extra: dict | None = None) -> str:
+        return target.format_string(template, extra)
 
     def run(self, target: Target):
         target.start_work()
@@ -37,7 +49,25 @@ class APT_MODULE(ABC):
             f"---Start {self.__class__.__name__.upper()} Module---")
         success = True
         try:
-            self.action(target)
+            missing = [k for k in self.consumes_variables if not target.has_variable(k)]
+            if missing:
+                success = False
+                target.log_activity(
+                    f"Missing required variables: {', '.join(missing)}",
+                    True,
+                    MESSAGE_TYPE.ERROR,
+                )
+            else:
+                target_os = self._normalize_target_os(target)
+                match target_os:
+                    case "windows":
+                        self.run_windows(target)
+                    case "linux":
+                        self.run_linux(target)
+                    case "mac":
+                        self.run_mac(target)
+                    case _:
+                        self.run_other(target_os, target)
         except PermissionError as exc:
             success = False
             if sys.platform == "darwin":
@@ -58,16 +88,32 @@ class APT_MODULE(ABC):
             logging.log(logging.ERROR, f"{self.__class__.__name__}: {exc}")
             target.log_activity(msg, True, MESSAGE_TYPE.ERROR)
         if success:
-            for fact in self.produces:
-                target.set_fact(fact)
+            for key in self.produces_variables:
+                if not target.has_variable(key):
+                    target.set_variable(key, True)
         target.log_activity(
             f"---Finish {self.__class__.__name__.upper()} Module---")
         target.finish_work()
 
-    @abstractmethod
+    def run_windows(self, target: Target):
+        self.action(target)
+
+    def run_mac(self, target: Target):
+        self.action(target)
+
+    def run_linux(self, target: Target):
+        self.action(target)
+
+    def run_other(self, os_name: str, target: Target):
+        target.log_activity(
+            f"Unknown target OS '{os_name}', running generic module path.",
+            True,
+            MESSAGE_TYPE.INFORMATION,
+        )
+        self.action(target)
+
     def action(self, target: Target):
         ...
 
-    @abstractmethod
     def enable(self, e):
         ...

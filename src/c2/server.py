@@ -31,7 +31,6 @@ from c2.protocol import (
     ResultMessage,
     TaskMessage,
     decrypt_message,
-    encrypt_message,
 )
 
 
@@ -47,11 +46,12 @@ class SessionState:
         self.platform: str = ""
         self.username: str = ""
         self.last_seen: float = 0.0
-        self.pending_task: Optional[TaskMessage] = None
+        self.pending_tasks: list[TaskMessage] = []
+        self.task_commands: dict[str, str] = {}
         self.results: list[ResultMessage] = []
         self.psk: Optional[str] = None
-        # Facts discovered about this session's host (mirrors Target.facts)
-        self.facts: dict[str, bool] = {}
+        # Variables discovered about this session's host.
+        self.variables: dict[str, bool] = {}
 
 
 class C2Server:
@@ -89,7 +89,11 @@ class C2Server:
     def stop(self) -> None:
         if self._server:
             self._server.shutdown()
+            self._server.server_close()
             self._server = None
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2)
+        self._thread = None
         logger.info("C2 server stopped")
 
     @property
@@ -105,7 +109,9 @@ class C2Server:
             sess = self.sessions.get(session_id)
             if sess is None:
                 return False
-            sess.pending_task = TaskMessage(session_id=session_id, command=command)
+            task = TaskMessage(session_id=session_id, command=command)
+            sess.pending_tasks.append(task)
+            sess.task_commands[task.task_id] = command
             return True
 
     def get_session(self, session_id: str) -> Optional[SessionState]:
@@ -131,8 +137,7 @@ class C2Server:
             sess.platform = msg.platform
             sess.username = msg.username
             sess.last_seen = time.time()
-            task = sess.pending_task
-            sess.pending_task = None
+            task = sess.pending_tasks.pop(0) if sess.pending_tasks else None
 
         if self.on_checkin:
             try:

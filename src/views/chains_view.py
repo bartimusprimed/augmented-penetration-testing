@@ -1,9 +1,9 @@
 import flet as ft
+import time
 from models.apt import Apt
 from models.chain import Chain
 from components.chains.chain_card import ChainCard
 from components.chains.chain_canvas import ChainCanvas
-from components.chains.chain_builder import ChainBuilder
 from components.chains.module_palette import ModulePalette
 
 CYAN = ft.Colors.CYAN_400
@@ -12,18 +12,48 @@ CYAN = ft.Colors.CYAN_400
 @ft.component
 def Chains(state: Apt):
     selected_chain, set_selected_chain = ft.use_state(None)
+    chain_name_input, set_chain_name_input = ft.use_state("")
+
+    def _fmt_saved(ts: float) -> str:
+        if ts <= 0:
+            return "never"
+        return time.strftime("%H:%M:%S", time.localtime(ts))
 
     def select_chain(chain: Chain):
         set_selected_chain(chain)
+        set_chain_name_input(chain.name)
 
     def add_chain(e):
         new_chain = state.create_chain(f"Chain {len(state.chains) + 1}")
         set_selected_chain(new_chain)
+        set_chain_name_input(new_chain.name)
 
     def delete_chain(e):
         if selected_chain is not None:
             state.remove_chain(selected_chain)
             set_selected_chain(None)
+            set_chain_name_input("")
+
+    def delete_chain_item(chain: Chain):
+        state.remove_chain(chain)
+        if selected_chain == chain:
+            set_selected_chain(None)
+            set_chain_name_input("")
+
+    def on_chain_name_change(e: ft.ControlEvent):
+        set_chain_name_input(e.control.value or "")
+
+    def rename_selected_chain(e: ft.ControlEvent):
+        if selected_chain is None:
+            return
+        new_name = (chain_name_input or "").strip()
+        if not new_name:
+            set_chain_name_input(selected_chain.name)
+            return
+        if selected_chain.name != new_name:
+            selected_chain.name = new_name
+            selected_chain.trigger_update()
+        set_chain_name_input(selected_chain.name)
 
     chain_list_items: list[ft.Control] = [
         ft.Row(
@@ -36,6 +66,21 @@ def Chains(state: Apt):
                     on_click=add_chain,
                 ),
             ],
+        ),
+        ft.Row(
+            [
+                ft.Icon(
+                    ft.Icons.CHECK_CIRCLE if state.chains_save_status in ("Saved", "Loaded") else ft.Icons.ERROR_OUTLINE,
+                    size=12,
+                    color=ft.Colors.GREEN_400 if state.chains_save_status in ("Saved", "Loaded") else ft.Colors.RED_400,
+                ),
+                ft.Text(
+                    f"{state.chains_save_status} at {_fmt_saved(state.chains_last_saved_at)}",
+                    size=11,
+                    color=ft.Colors.GREY_500,
+                ),
+            ],
+            spacing=4,
         ),
         ft.Container(height=1, bgcolor=ft.Colors.GREY_800),
     ]
@@ -62,7 +107,14 @@ def Chains(state: Apt):
         )
     )
     for chain in state.chains:
-        chain_list_items.append(ChainCard(chain=chain, state=state, on_select=select_chain))
+        chain_list_items.append(
+            ChainCard(
+                chain=chain,
+                state=state,
+                on_select=select_chain,
+                on_delete=delete_chain_item,
+            )
+        )
 
     if not state.chains:
         chain_list_items.append(
@@ -100,11 +152,16 @@ def Chains(state: Apt):
                             ft.Row(
                                 [
                                     ft.Icon(ft.Icons.LINK, color=CYAN, size=20),
-                                    ft.Text(
-                                        selected_chain.name,
-                                        size=18,
-                                        weight=ft.FontWeight.BOLD,
-                                        color=CYAN,
+                                    ft.TextField(
+                                        value=chain_name_input,
+                                        text_size=18,
+                                        on_change=on_chain_name_change,
+                                        on_submit=rename_selected_chain,
+                                        on_blur=rename_selected_chain,
+                                        border_color=ft.Colors.GREY_700,
+                                        focused_border_color=CYAN,
+                                        bgcolor=ft.Colors.GREY_900,
+                                        dense=True,
                                         expand=True,
                                     ),
                                     ft.IconButton(

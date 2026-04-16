@@ -165,8 +165,8 @@ class ResultMessage:
     encoding: str = "utf-8"
     exit_code: int = 0
     timestamp: float = field(default_factory=time.time)
-    # Facts the agent discovered during execution (e.g. {"host_alive": True})
-    facts: dict[str, Any] = field(default_factory=dict)
+    # Variables discovered during execution (e.g. {"host_alive": True})
+    variables: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -181,7 +181,7 @@ class ResultMessage:
             encoding=d.get("encoding", "utf-8"),
             exit_code=d.get("exit_code", 0),
             timestamp=d.get("timestamp", 0.0),
-            facts=d.get("facts", {}),
+            variables=d.get("variables", {}),
         )
 
     def decoded_output(self) -> str:

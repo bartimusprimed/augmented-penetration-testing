@@ -1,0 +1,26 @@
+[
+  {
+    "name": "TestChain",
+    "nodes": [
+      {
+        "node_id": "219a2c7f",
+        "module_key": "osidentify",
+        "position": [
+          20.0,
+          20.0
+        ],
+        "status": "success"
+      },
+      {
+        "node_id": "9ff9975c",
+        "module_key": "user_process_enum",
+        "position": [
+          240.0,
+          20.0
+        ],
+        "status": "success"
+      }
+    ],
+    "edges": []
+  }
+]

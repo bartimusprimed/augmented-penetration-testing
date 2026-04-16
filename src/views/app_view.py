@@ -31,7 +31,7 @@ def App():
         apt_state.start_local_beacon()
 
     ft.on_mounted(_show_startup_warning)
-    ft.on_unmounted(lambda _: apt_state.stop_local_beacon())
+    ft.on_unmounted(lambda: apt_state.shutdown())
 
     def goto_page(page_index):
         set_current_page(page_index)

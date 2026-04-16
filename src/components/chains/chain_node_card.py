@@ -1,6 +1,6 @@
 """ChainNodeCard — a draggable node widget for the chain canvas.
 
-Displays module name, tactic badge, and consumes/produces fact pills.
+Displays module name, tactic badge, and consumes/produces variable pills.
 The card can be positioned absolutely within a ft.Stack canvas.
 """
 import flet as ft
@@ -64,8 +64,8 @@ def ChainNodeCard(node: ChainNode, chain: Chain, state: Apt) -> ft.Control:
     mod = state.modules.classes.get(node.module_key)
     name = (mod.name if mod and mod.name else node.module_key)
     tactic = mod.tactic if mod else None
-    consumes = mod.consumes if mod else []
-    produces = mod.produces if mod else []
+    consumes = mod.consumes_variables if mod else []
+    produces = mod.produces_variables if mod else []
 
     border_color = _status_color(node.status)
 
@@ -79,13 +79,13 @@ def ChainNodeCard(node: ChainNode, chain: Chain, state: Apt) -> ft.Control:
             padding=ft.Padding(left=5, right=5, top=2, bottom=2),
         )
 
-    fact_row_items: list[ft.Control] = []
+    variable_row_items: list[ft.Control] = []
     for f in consumes:
-        fact_row_items.append(_fact_pill(f"← {f}", ft.Colors.ORANGE_800))
+        variable_row_items.append(_fact_pill(f"← {f}", ft.Colors.ORANGE_800))
     for f in produces:
-        fact_row_items.append(_fact_pill(f"→ {f}", ft.Colors.GREEN_800))
+        variable_row_items.append(_fact_pill(f"→ {f}", ft.Colors.GREEN_800))
 
-    fact_row = ft.Row(fact_row_items, spacing=4, wrap=True) if fact_row_items else ft.Container()
+    variable_row = ft.Row(variable_row_items, spacing=4, wrap=True) if variable_row_items else ft.Container()
 
     card_content = ft.Container(
         ft.Column(
@@ -106,7 +106,7 @@ def ChainNodeCard(node: ChainNode, chain: Chain, state: Apt) -> ft.Control:
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 tactic_badge,
-                fact_row,
+                variable_row,
             ],
             spacing=4,
             tight=True,
